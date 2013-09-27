@@ -227,7 +227,7 @@ add "libdiceros.so"(which is generated after build) to the environment variable 
 add "diceros-1.0.0.jar"(which is generated after build) to the classpath
 
 * static deploy:   
-add line "security.provider.10=com.intel.diceros.provider.DicerosProvider" in file "<java-home>\lib\security\java.security"
+add line "security.provider.10=com.intel.diceros.provider.DicerosProvider" in file "\<java-home\>\lib\security\java.security"
 
 * dynamic deploy:   
 add the following line "Security.addProvider(new com.intel.diceros.provider.DicerosProvider());"    
