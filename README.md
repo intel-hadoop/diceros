@@ -216,18 +216,19 @@ mvn package -Dmaven.test.skip=true
 mvn test  
 
 #### Deploy
-* hardware prerequisite:
+* hardware prerequisite:   
 Intel® Digital Random Number Generator (DRNG)   
 AES-NI
 
-* software prerequisite:
+* software prerequisite:   
 openssl-1.0.1c or above(just test openssl-1.0.1e)   
 openjdk7   
 add "libdiceros.so"(which is generated after build) to the environment variable "java.library.path"   
 add "diceros-1.0.0.jar"(which is generated after build) to the classpath
 
-* static deploy:
+* static deploy:   
 add line "security.provider.10=com.intel.diceros.provider.DicerosProvider" in file "<java-home>\lib\security\java.security"
 
-* dynamic deploy:
-add the following line "Security.addProvider(new com.intel.diceros.provider.DicerosProvider());" before calling "SecureRandom.getInstace()" or "Cipher.getInstance()" method.
+* dynamic deploy:   
+add the following line "Security.addProvider(new com.intel.diceros.provider.DicerosProvider());"    
+before calling method "SecureRandom.getInstace()" or "Cipher.getInstance()".
