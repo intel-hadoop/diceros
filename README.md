@@ -9,9 +9,9 @@ Diceros is not a full featured JCE provider yet for now, but we will make contin
 
 #### Quick Start
 
-##### AES/CTR/NOPADDING
+###### AES/CTR/NOPADDING
 
-##### DRNG
+###### DRNG
 
 #### Build 
 
