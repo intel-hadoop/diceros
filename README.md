@@ -7,7 +7,7 @@ Diceros is a sub-project of Rhino project which focus on providing a hardware ac
 
 Diceros is not a full featured JCE provider yet for now, but we will make continuous effort towards that goal. You can download the source code and follow the instruction to build it, we have test the functionality in OpenJDK 7.
 
-= Build =
+#### Build 
 
-= Validate = 
+#### Validate  
 
