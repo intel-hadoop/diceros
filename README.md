@@ -10,6 +10,7 @@ Diceros is not a full featured JCE provider yet for now, but we will make contin
 #### Quick Start
 
 ###### AES/CTR/NOPADDING
+```java
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -193,8 +194,9 @@ public class AESTest {
 		new AESTest().performTest();
 	}
 }
-
+```
 ###### DRNG
+```java
 import java.security.SecureRandom;
 import java.security.Security;
 
@@ -206,7 +208,7 @@ public class DRNGTest {
 		random.nextBytes(bytes);
 	}
 }
-
+```
 #### Build 
 mvn package -Dmaven.test.skip=true
 
@@ -214,18 +216,18 @@ mvn package -Dmaven.test.skip=true
 mvn test  
 
 #### Deploy
-hardware prerequisite:
-Intel® Digital Random Number Generator (DRNG)
+* hardware prerequisite:
+Intel® Digital Random Number Generator (DRNG)   
 AES-NI
 
-software prerequisite:
-openssl-1.0.1c or above(just test openssl-1.0.1e)
-openjdk7
-add "libdiceros.so"(which is generated after build) to the environment variable "java.library.path"
+* software prerequisite:
+openssl-1.0.1c or above(just test openssl-1.0.1e)   
+openjdk7   
+add "libdiceros.so"(which is generated after build) to the environment variable "java.library.path"   
 add "diceros-1.0.0.jar"(which is generated after build) to the classpath
 
-static deploy:
+* static deploy:
 add line "security.provider.10=com.intel.diceros.provider.DicerosProvider" in file "<java-home>\lib\security\java.security"
 
-dynamic deploy:
+* dynamic deploy:
 add the following line "Security.addProvider(new com.intel.diceros.provider.DicerosProvider());" before calling "SecureRandom.getInstace()" or "Cipher.getInstance()" method.
