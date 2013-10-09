@@ -42,8 +42,8 @@ import com.intel.diceros.test.BaseBlockCipherTest;
  * algorithm.
  */
 public class AESPerfTest extends BaseBlockCipherTest {
-	private static final int DATA_SIZE = 256 * 1024;
-	private static final int RUNS = 3;
+	private static final int INPUT_BUFFER_SIZE = 256 * 1024;
+	private static final int RUNS = 1024 * 1024 * 1024 / INPUT_BUFFER_SIZE; //input size: 1GB
 
 	private static SecureRandom rand = new SecureRandom();
 
@@ -83,8 +83,8 @@ public class AESPerfTest extends BaseBlockCipherTest {
 		byte[] key = new byte[16];
 		rand.nextBytes(key);
 
-		byte[] encryptResult = new byte[DATA_SIZE];
-		byte[] decryptResult = new byte[DATA_SIZE];
+		byte[] encryptResult = new byte[INPUT_BUFFER_SIZE];
+		byte[] decryptResult = new byte[INPUT_BUFFER_SIZE];
 		Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding", provider);
 		cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"));
 		speedTestCipherForMode("encrypt", cipher, input, encryptResult);
@@ -125,8 +125,8 @@ public class AESPerfTest extends BaseBlockCipherTest {
 		byte[] key = new byte[16];
 		rand.nextBytes(key);
 
-		ByteBuffer encryptResult = ByteBuffer.allocateDirect(DATA_SIZE);
-		ByteBuffer decryptResult = ByteBuffer.allocateDirect(DATA_SIZE);
+		ByteBuffer encryptResult = ByteBuffer.allocateDirect(INPUT_BUFFER_SIZE);
+		ByteBuffer decryptResult = ByteBuffer.allocateDirect(INPUT_BUFFER_SIZE);
 		Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding", provider);
 		cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"));
 		speedTestCipherForMode("encrypt", cipher, input, encryptResult);
@@ -147,17 +147,16 @@ public class AESPerfTest extends BaseBlockCipherTest {
 		System.out.println("Testing " + cipher.getAlgorithm() + " "
 				+ cipher.getBlockSize() * 8 + " " + mode);
 
-		long[] runtimes = new long[RUNS];
-		long total = 0;
+		long start = System.nanoTime();
 		for (int i = 0; i < RUNS; i++) {
-			runtimes[i] = testCipher(cipher, input, output);
-			total += runtimes[i];
+			testCipher(cipher, input, output);
 		}
+		long end = System.nanoTime();
+		long total = end - start;
+		
 		long averageRuntime = total / RUNS;
-		System.out.println(cipher.getAlgorithm() + " Average run time: "
-				+ averageRuntime / 1000000 + "ms");
-		final long mbPerSecond = (long) ((double) DATA_SIZE / averageRuntime
-				* 1000000000 / (1024 * 1024));
+		final long mbPerSecond = (long) ((double) INPUT_BUFFER_SIZE / averageRuntime
+				* 1000000000 / (1024*1024));
 		System.out.println(cipher.getAlgorithm() + " Average speed:    "
 				+ mbPerSecond + " MB/s");
 	}
@@ -169,48 +168,32 @@ public class AESPerfTest extends BaseBlockCipherTest {
 		System.out.println("Testing " + cipher.getAlgorithm() + " "
 				+ cipher.getBlockSize() * 8 + " " + mode);
 
-		long[] runtimes = new long[RUNS];
-		long total = 0;
+		long start = System.nanoTime();
 		for (int i = 0; i < RUNS; i++) {
-			runtimes[i] = testCipher(cipher, input, output);
+			testCipher(cipher, input, output);
 			input.flip();
 			output.flip();
-			total += runtimes[i];
 		}
+		long end = System.nanoTime();
+		long total = end - start;
+		
 		long averageRuntime = total / RUNS;
-		System.out.println(cipher.getAlgorithm() + " Average run time: "
-				+ averageRuntime / 1000000 + "ms");
-		final long mbPerSecond = (long) ((double) DATA_SIZE / averageRuntime
-				* 1000000000 / (1024 * 1024));
+		final long mbPerSecond = (long) ((double) INPUT_BUFFER_SIZE / averageRuntime
+				* 1000000000 / (1024*1024));
 		System.out.println(cipher.getAlgorithm() + " Average speed:    "
 				+ mbPerSecond + " MB/s");
 	}
 
-	private long testCipher(Cipher cipher, byte[] input, byte[] output)
+	private void testCipher(Cipher cipher, byte[] input, byte[] output)
 			throws ShortBufferException, IllegalBlockSizeException,
 			BadPaddingException {
-		long start = System.nanoTime();
-
-		int outputOffset = 0;
-		outputOffset += cipher.update(input, 0, input.length, output);
-
-		cipher.doFinal(output, outputOffset);
-
-		long end = System.nanoTime();
-		long delta = end - start;
-		return delta;
+		cipher.doFinal(input, 0, input.length, output, 0);
 	}
 
-	private long testCipher(Cipher cipher, ByteBuffer input, ByteBuffer output)
+	private void testCipher(Cipher cipher, ByteBuffer input, ByteBuffer output)
 			throws ShortBufferException, IllegalBlockSizeException,
 			BadPaddingException {
-		long start = System.nanoTime();
-
 		cipher.doFinal(input, output);
-
-		long end = System.nanoTime();
-		long delta = end - start;
-		return delta;
 	}
 
 	/**
@@ -221,7 +204,7 @@ public class AESPerfTest extends BaseBlockCipherTest {
 	@Override
 	public void performTest() throws Exception {
 		System.out.println("Initialising test data.");
-		byte[] input = new byte[DATA_SIZE];
+		byte[] input = new byte[INPUT_BUFFER_SIZE];
 		rand.nextBytes(input);
 		System.out.println("Init test data complete.");
 
@@ -243,7 +226,7 @@ public class AESPerfTest extends BaseBlockCipherTest {
 		for (String provider : providers) {
 			System.out.println("provider:" + provider);
 
-			ByteBuffer inputBB = ByteBuffer.allocateDirect(DATA_SIZE);
+			ByteBuffer inputBB = ByteBuffer.allocateDirect(INPUT_BUFFER_SIZE);
 			inputBB.put(input);
 			inputBB.flip();
 			speedTestCipher(inputBB, provider);
