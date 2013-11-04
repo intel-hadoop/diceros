@@ -18,4 +18,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#cmakedefine HADOOP_CRYPTO_LIBRARY "@HADOOP_CRYPTO_LIBRARY@"
+#cmakedefine HADOOP_AESMB_LIBRARY "@HADOOP_AESMB_LIBRARY@"
+
 #endif

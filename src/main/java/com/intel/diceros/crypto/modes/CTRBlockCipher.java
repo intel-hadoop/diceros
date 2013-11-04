@@ -64,7 +64,7 @@ public class CTRBlockCipher implements BlockCipher {
 			byte[] iv = ivParam.getIV();
 			System.arraycopy(iv, 0, IV, 0, IV.length);
 
-			reset();
+            cipher.setIV(this.IV);
 
 			CipherParameters param = ivParam.getParameters();
 			if ((param instanceof KeyParameter)
@@ -109,12 +109,31 @@ public class CTRBlockCipher implements BlockCipher {
 	@Override
 	public void reset() {
 		cipher.reset();
-		cipher.setIV(this.IV);
 	}
 
-	@Override
+    @Override
+    public void setPadding(String padding) {
+        cipher.setPadding(padding);
+    }
+
+    @Override
 	public void setIV(byte[] IV) {
 		this.IV = IV;
 		cipher.setIV(this.IV);
 	}
+
+    @Override
+    public String getMode(){
+        return cipher.getMode();
+    }
+
+    @Override
+    public String getPadding() {
+        return cipher.getPadding();
+    }
+
+    @Override
+    public int getHeadLength() {
+        return cipher.getHeadLength();
+    }
 }

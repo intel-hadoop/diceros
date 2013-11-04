@@ -51,6 +51,10 @@
         <crypto.lib></crypto.lib>
         <crypto.include></crypto.include>
         <require.crypto>true</require.crypto>
+        <aesmb.prefix></aesmb.prefix>
+        <aesmb.lib></aesmb.lib>
+        <aesmb.include></aesmb.include>
+        <require.aesmb>true</require.aesmb>
       </properties>
   		<build>
   			<plugins>
@@ -67,6 +71,7 @@
                 <configuration>
                   <javahPath>${env.JAVA_HOME}/bin/javah</javahPath>
                   <javahClassNames>
+										<javahClassName>com.intel.diceros.crypto.engines.AESMutliBufferEngine</javahClassName>
 										<javahClassName>com.intel.diceros.crypto.engines.AESOpensslEngine</javahClassName>
 										<javahClassName>com.intel.diceros.provider.securerandom.SecureRandom$DRNG</javahClassName>
                   </javahClassNames>
@@ -87,7 +92,7 @@
                 <configuration>
                   <target>
                     <exec executable="cmake" dir="${project.build.directory}/native" failonerror="true">
-                      <arg line="${basedir}/src/ -DGENERATED_JAVAH=${project.build.directory}/native/javah -DJVM_ARCH_DATA_MODEL=${sun.arch.data.model} -DREQUIRE_CRYPTO=${require.crypto} -DCUSTOM_CRYPTO_PREFIX=${crypto.prefix} -DCUSTOM_CRYPTO_LIB=${crypto.lib} -DCUSTOM_CRYPTO_INCLUDE=${crypto.include}"/>
+                      <arg line="${basedir}/src/ -DGENERATED_JAVAH=${project.build.directory}/native/javah -DJVM_ARCH_DATA_MODEL=${sun.arch.data.model} -DREQUIRE_CRYPTO=${require.crypto} -DCUSTOM_CRYPTO_PREFIX=${crypto.prefix} -DCUSTOM_CRYPTO_LIB=${crypto.lib} -DCUSTOM_CRYPTO_INCLUDE=${crypto.include} -DREQUIRE_AESMB=${require.aesmb} -DCUSTOM_AESMB_PREFIX=${aesmb.prefix} -DCUSTOM_AESMB_LIB=${aesmb.lib} -DCUSTOM_AESMB_INCLUDE=${aesmb.include}"/>
                     </exec>
                     <exec executable="make" dir="${project.build.directory}/native" failonerror="true">
                       <arg line="VERBOSE=1"/>
@@ -142,6 +147,10 @@
                         if [ "${bundle.crypto}" = "true" ] ; then
                           cd ${crypto.lib}
                           $$TAR libcrypto* | (cd $${TARGET_DIR}/; $$UNTAR)
+                        fi
+                        if [ "${bundle.aesmb}" = "true" ] ; then
+                          cd ${aesmb.lib}
+                          $$TAR libaesmb* | (cd $${TARGET_DIR}/; $$UNTAR)
                         fi
                       fi
                     </echo>

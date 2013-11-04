@@ -18,6 +18,12 @@
 
 package com.intel.diceros.test.aes;
 
+import com.intel.diceros.provider.util.Arrays;
+import com.intel.diceros.test.BaseBlockCipherTest;
+import com.intel.diceros.test.util.Hex;
+
+import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -26,54 +32,49 @@ import java.nio.ByteBuffer;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.Security;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.CipherOutputStream;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.ShortBufferException;
-import javax.crypto.spec.SecretKeySpec;
-
-import com.intel.diceros.provider.DicerosProvider;
-import com.intel.diceros.provider.util.Arrays;
-import com.intel.diceros.test.BaseBlockCipherTest;
-import com.intel.diceros.test.util.Hex;
 
 /**
  * This class does the correctness test of AES CTR mode algorithm
  */
-public class AESTest extends BaseBlockCipherTest {
-	private static String[] cipherTests = {
+public abstract class AESAbstarctTest extends BaseBlockCipherTest {
+
+    protected String cipherName;
+
+    protected String providerName;
+
+    protected static String[] cipherTests = {
 			"000102030405060708090a0b0c0d0e0f", // key data, length 128
-			"hello world hello world hello world hello world hello world hello world", // input
+			"hello world hello world hello world hello world hello world hello world123456789", // input
 																																									// data
 
 			"000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", // key
 																																					// data,
 																																					// length
 																																					// 256
-			"hello world hello world hello world hello world hello world hello world", }; // input
+			"hello world hello world hello world hello world hello world hello world123456789", }; // input
 																																										// data
 	public static final int BYTEBUFFER_SIZE = 1000;
 
-	public AESTest() {
+	public AESAbstarctTest(String cipherName, String providerName) {
 		super("AES");
+        this.cipherName = cipherName;
+        this.providerName = providerName;
 	}
+
+    public AESAbstarctTest() {
+        super("AES");
+    }
 
 	/**
 	 * AES Test with byte array as input data, first encrypt the
 	 * <code>input</code>, then decrypt the ciphertext result and compare it with
 	 * the <code>input</code>.
 	 * 
-	 * @param keyBytes
-	 *          the key data
 	 * @param input
 	 *          the input data
 	 * @throws Exception
 	 */
-	private void testByteArray(byte[] keyBytes, byte[] input) throws Exception {
+	protected void testByteArray(byte[] keyBytes, byte[] input) throws Exception {
 		Key key;
 		Cipher in, out;
 		CipherInputStream cIn;
@@ -83,8 +84,8 @@ public class AESTest extends BaseBlockCipherTest {
 
 		key = new SecretKeySpec(keyBytes, "AES");
 
-		in = Cipher.getInstance("AES/CTR/NoPadding", "DC");
-		out = Cipher.getInstance("AES/CTR/NoPadding", "DC");
+		in = Cipher.getInstance(this.cipherName, this.providerName);
+		out = Cipher.getInstance(this.cipherName, this.providerName);
 
 		try {
 			out.init(Cipher.ENCRYPT_MODE, key);
@@ -159,7 +160,7 @@ public class AESTest extends BaseBlockCipherTest {
 	 * @throws Exception
 	 * @throws BadPaddingException
 	 */
-	public void testByteBuffer(byte[] keyBytes, ByteBuffer input)
+	protected void testByteBuffer(byte[] keyBytes, ByteBuffer input)
 			throws NoSuchAlgorithmException, NoSuchProviderException,
 			NoSuchPaddingException, ShortBufferException, Exception,
 			BadPaddingException {
@@ -229,7 +230,7 @@ public class AESTest extends BaseBlockCipherTest {
 	 * @throws Exception
 	 * @throws BadPaddingException
 	 */
-	public void testMix(byte[] keyBytes, byte[] inputByteArray,
+	protected void testMix(byte[] keyBytes, byte[] inputByteArray,
 			ByteBuffer inputByteBuffer) throws NoSuchAlgorithmException,
 			NoSuchProviderException, NoSuchPaddingException, ShortBufferException,
 			Exception, BadPaddingException {
@@ -240,8 +241,8 @@ public class AESTest extends BaseBlockCipherTest {
 
 		key = new SecretKeySpec(keyBytes, "AES");
 
-		enc = Cipher.getInstance("AES/CTR/NoPadding", "DC");
-		dec = Cipher.getInstance("AES/CTR/NoPadding", "DC");
+		enc = Cipher.getInstance(this.cipherName, this.providerName);
+		dec = Cipher.getInstance(this.cipherName, this.providerName);
 
 		try {
 			enc.init(Cipher.ENCRYPT_MODE, key);
@@ -275,7 +276,7 @@ public class AESTest extends BaseBlockCipherTest {
 		totalInput.put(inputByteArray);
 		totalInput.put(inputByteBuffer);
 		totalInput.flip();
-		inputByteBuffer.flip();
+		//inputByteBuffer.flip();
 		if (!totalInput.equals(decResult)) {
 			byte[] inArray = new byte[totalInput.remaining()];
 			byte[] decResultArray = new byte[decResult.remaining()];
@@ -312,8 +313,4 @@ public class AESTest extends BaseBlockCipherTest {
 		}
 	}
 
-	public void testAES() {
-		Security.addProvider(new DicerosProvider());
-		runTest(new AESTest());
-	}
 }
