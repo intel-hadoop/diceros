@@ -450,6 +450,7 @@ public class AES {
                 System.loadLibrary("diceros");
             } catch (UnsatisfiedLinkError e) {
                 DCProviderAvailable = false;
+                throw new UnsatisfiedLinkError(e.getMessage());
             }
         }
 

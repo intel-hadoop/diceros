@@ -191,7 +191,7 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_bu
      if (NULL == bInput || NULL == bOutput) {
           return 0;
      }
-     EVP_CIPHER_CTX_set_padding(context, 0);
+     //EVP_CIPHER_CTX_set_padding(context, 0);
      EVP_CIPHER_CTX * ctx = (EVP_CIPHER_CTX *) context;
 
      cryptUpdate cryptUpdateFunc = getCryptUpdateFunc(

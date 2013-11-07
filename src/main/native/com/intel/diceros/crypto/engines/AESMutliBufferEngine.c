@@ -336,8 +336,7 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngin
         int i;
         for (i = 0 ; i < PARALLEL_LEVEL; i++) {
           //reset open ssl context
-          //dian
-            EVP_CIPHER_CTX_cleanup(ctx);
+          EVP_CIPHER_CTX_cleanup(ctx);
           opensslResetContext(ctx->encrypt, ctx, aesCtx);
           //clear padding, since multi-buffer AES did not have padding
           EVP_CIPHER_CTX_set_padding(ctx, 0);
