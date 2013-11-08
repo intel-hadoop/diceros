@@ -9,7 +9,9 @@ Diceros is not a full featured JCE provider yet for now, but we will make contin
 
 #### Quick Start
 
-###### AES/CTR/NOPADDING
+###### Cipher
+The example is for AES/CTR/NOPADDING, you can use AES/CBC/NOPADDING,AES/CBC/PKCS5PADDING or AES/MBCBC/PKCS5PADDING instead of.
+
 ```java
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -223,8 +225,9 @@ AES-NI
 * software prerequisite:   
 openssl-1.0.1c or above(just test openssl-1.0.1e)   
 openjdk7   
-add "libdiceros.so"(which is generated after build) to the environment variable "java.library.path"   
+add "libdiceros.so"(which is generated after build) to the environment variable "java.library.path" 
 add "diceros-1.0.0.jar"(which is generated after build) to the classpath
+if you are using the cipher of "AES/MBCBC/PKCS5PADDING", add "libaesmb.so"(which is the lib of Multi-Buffer) to the environment variable "java.library.path"
 
 * static deploy:   
 add line "security.provider.10=com.intel.diceros.provider.DicerosProvider" in file "\<java-home\>\lib\security\java.security"
