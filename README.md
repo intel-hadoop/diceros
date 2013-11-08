@@ -226,7 +226,9 @@ AES-NI
 openssl-1.0.1c or above(just test openssl-1.0.1e);   
 openjdk7;   
 add "libdiceros.so"(which is generated after build) to the environment variable "java.library.path";
+
 add "diceros-1.0.0.jar"(which is generated after build) to the classpath;
+
 if you are using the cipher of "AES/MBCBC/PKCS5PADDING", add "libaesmb.so"(which is the lib of Multi-Buffer) to the environment variable "java.library.path".
 
 * static deploy:   
