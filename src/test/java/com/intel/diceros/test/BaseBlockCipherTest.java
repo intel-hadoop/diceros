@@ -19,15 +19,15 @@
 package com.intel.diceros.test;
 
 public abstract class BaseBlockCipherTest extends SimpleTest {
-	
-	private String algorithm;
 
-	public BaseBlockCipherTest(String algorithm) {
-		this.algorithm = algorithm;
-	}
+  private String algorithm;
 
-	public String getName() {
-		return algorithm;
-	}
+  public BaseBlockCipherTest(String algorithm) {
+    this.algorithm = algorithm;
+  }
+
+  public String getName() {
+    return algorithm;
+  }
 
 }

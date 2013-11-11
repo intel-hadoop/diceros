@@ -18,53 +18,53 @@
 
 package com.intel.diceros.test;
 
-import java.io.PrintStream;
-
 import junit.framework.TestCase;
 
+import java.io.PrintStream;
 
-public abstract class SimpleTest extends TestCase implements Test{
-	protected void fail(String message, Throwable throwable) {
-		throw new TestFailedException(SimpleTestResult.failed(this, message,
-				throwable));
-	}
 
-	protected void fail(String message, Object expected, Object found) {
-		throw new TestFailedException(SimpleTestResult.failed(this, message,
-				expected, found));
-	}
-	
-	private TestResult success() {
-		return SimpleTestResult.successful(this, "Okay");
-	}
+public abstract class SimpleTest extends TestCase implements Test {
+  protected void fail(String message, Throwable throwable) {
+    throw new TestFailedException(SimpleTestResult.failed(this, message,
+            throwable));
+  }
 
-	public TestResult perform() {
-		try {
-			performTest();
+  protected void fail(String message, Object expected, Object found) {
+    throw new TestFailedException(SimpleTestResult.failed(this, message,
+            expected, found));
+  }
 
-			return success();
-		} catch (TestFailedException e) {
-			return e.getResult();
-		} catch (Exception e) {
-			return SimpleTestResult.failed(this, "Exception: " + e, e);
-		}
-	}
+  private TestResult success() {
+    return SimpleTestResult.successful(this, "Okay");
+  }
 
-	protected static void runTest(Test test) {
-		runTest(test, System.out);
-	}
+  public TestResult perform() {
+    try {
+      performTest();
 
-	protected static void runTest(Test test, PrintStream out) {
-		TestResult result = test.perform();
+      return success();
+    } catch (TestFailedException e) {
+      return e.getResult();
+    } catch (Exception e) {
+      return SimpleTestResult.failed(this, "Exception: " + e, e);
+    }
+  }
 
-		if (result.getException() != null) {
-			result.getException().printStackTrace();
-			fail(result.getException().getMessage());
-		}
-	}
-	
-	public abstract String getName();
-	
-	public abstract void performTest()
-	        throws Exception;
+  protected static void runTest(Test test) {
+    runTest(test, System.out);
+  }
+
+  protected static void runTest(Test test, PrintStream out) {
+    TestResult result = test.perform();
+
+    if (result.getException() != null) {
+      result.getException().printStackTrace();
+      fail(result.getException().getMessage());
+    }
+  }
+
+  public abstract String getName();
+
+  public abstract void performTest()
+          throws Exception;
 }

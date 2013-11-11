@@ -25,18 +25,17 @@ package com.intel.diceros.crypto;
  * exception.
  */
 public class DataLengthException extends RuntimeCryptoException {
-	private static final long serialVersionUID = -4242804504193727606L;
+  private static final long serialVersionUID = -4242804504193727606L;
 
-	public DataLengthException() {
-	}
+  public DataLengthException() {
+  }
 
-	/**
-	 * create a DataLengthException with the given message.
-	 * 
-	 * @param message
-	 *          the message to be carried with the exception.
-	 */
-	public DataLengthException(String message) {
-		super(message);
-	}
+  /**
+   * create a DataLengthException with the given message.
+   *
+   * @param message the message to be carried with the exception.
+   */
+  public DataLengthException(String message) {
+    super(message);
+  }
 }

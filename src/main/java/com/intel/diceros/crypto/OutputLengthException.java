@@ -19,9 +19,9 @@
 package com.intel.diceros.crypto;
 
 public class OutputLengthException extends DataLengthException {
-	private static final long serialVersionUID = 2876506450006655023L;
+  private static final long serialVersionUID = 2876506450006655023L;
 
-	public OutputLengthException(String msg) {
-		super(msg);
-	}
+  public OutputLengthException(String msg) {
+    super(msg);
+  }
 }

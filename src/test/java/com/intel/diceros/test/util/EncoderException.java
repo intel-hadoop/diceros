@@ -19,20 +19,17 @@
 package com.intel.diceros.test.util;
 
 public class EncoderException
-    extends IllegalStateException
-{
-	private static final long serialVersionUID = -3384396625202587189L;
-	private Throwable cause;
+        extends IllegalStateException {
+  private static final long serialVersionUID = -3384396625202587189L;
+  private Throwable cause;
 
-    EncoderException(String msg, Throwable cause)
-    {
-        super(msg);
+  EncoderException(String msg, Throwable cause) {
+    super(msg);
 
-        this.cause = cause;
-    }
+    this.cause = cause;
+  }
 
-    public Throwable getCause()
-    {
-        return cause;
-    }
+  public Throwable getCause() {
+    return cause;
+  }
 }

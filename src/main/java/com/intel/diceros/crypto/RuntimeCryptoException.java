@@ -22,18 +22,17 @@ package com.intel.diceros.crypto;
  * the foundation class for the exceptions thrown by the crypto packages.
  */
 public class RuntimeCryptoException extends RuntimeException {
-	private static final long serialVersionUID = 9133109245295368924L;
+  private static final long serialVersionUID = 9133109245295368924L;
 
-	public RuntimeCryptoException() {
-	}
+  public RuntimeCryptoException() {
+  }
 
-	/**
-	 * create a RuntimeCryptoException with the given message.
-	 * 
-	 * @param message
-	 *          the message to be carried with the exception.
-	 */
-	public RuntimeCryptoException(String message) {
-		super(message);
-	}
+  /**
+   * create a RuntimeCryptoException with the given message.
+   *
+   * @param message the message to be carried with the exception.
+   */
+  public RuntimeCryptoException(String message) {
+    super(message);
+  }
 }

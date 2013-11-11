@@ -21,5 +21,5 @@ package com.intel.diceros.provider.symmetric.util;
 import com.intel.diceros.crypto.BlockCipher;
 
 public interface BlockCipherProvider {
-	BlockCipher get();
+  BlockCipher get();
 }

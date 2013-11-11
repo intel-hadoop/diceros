@@ -28,74 +28,74 @@ import java.nio.ByteBuffer;
 import java.security.Key;
 import java.security.Security;
 
-public class AESCBCMBTest extends AESAbstarctTest{
+public class AESCBCMBTest extends AESAbstarctTest {
 
-    public AESCBCMBTest(){
+  public AESCBCMBTest() {
 
+  }
+
+  public AESCBCMBTest(String cipherName, String providerName) {
+    super(cipherName, providerName);
+  }
+
+  protected void testByteArray(byte[] keyBytes, byte[] input) throws Exception {
+    Key key;
+    Cipher in, out;
+
+    key = new SecretKeySpec(keyBytes, "AES");
+
+    in = Cipher.getInstance(this.cipherName, this.providerName);
+    out = Cipher.getInstance(this.cipherName, this.providerName);
+
+    try {
+      out.init(Cipher.ENCRYPT_MODE, key);
+    } catch (Exception e) {
+      fail("AES failed initialisation - " + e.toString(), e);
     }
 
-    public AESCBCMBTest(String cipherName, String providerName) {
-        super(cipherName, providerName);
+    try {
+      in.init(Cipher.DECRYPT_MODE, key, new javax.crypto.spec.IvParameterSpec(
+              out.getIV()));
+    } catch (Exception e) {
+      fail("AES failed initialisation - " + e.toString(), e);
     }
 
-    protected void testByteArray(byte[] keyBytes, byte[] input) throws Exception {
-        Key key;
-        Cipher in, out;
-
-        key = new SecretKeySpec(keyBytes, "AES");
-
-        in = Cipher.getInstance(this.cipherName, this.providerName);
-        out = Cipher.getInstance(this.cipherName, this.providerName);
-
-        try {
-            out.init(Cipher.ENCRYPT_MODE, key);
-        } catch (Exception e) {
-            fail("AES failed initialisation - " + e.toString(), e);
-        }
-
-        try {
-            in.init(Cipher.DECRYPT_MODE, key, new javax.crypto.spec.IvParameterSpec(
-                    out.getIV()));
-        } catch (Exception e) {
-            fail("AES failed initialisation - " + e.toString(), e);
-        }
-
-        //
-        // encryption pass
-        //
-        byte[] encrytion = new byte[input.length + 16 + 2];
-        out.doFinal(input,0,input.length,encrytion,0);
-        if (encrytion.length != input.length + 16 + 2){
-            fail("AES failed encryption - ");
-        }
-
-        byte[] decrytion = in.doFinal(encrytion,0,encrytion.length);
-
-        if (!Arrays.areEqual(decrytion, input)) {
-            fail("AES failed decryption");
-        }
-
+    //
+    // encryption pass
+    //
+    byte[] encrytion = new byte[input.length + 16 + 2];
+    out.doFinal(input, 0, input.length, encrytion, 0);
+    if (encrytion.length != input.length + 16 + 2) {
+      fail("AES failed encryption - ");
     }
 
-    @Override
-    public void performTest() throws Exception {
-        for (int i = 0; i != cipherTests.length; i += 2) {
-            testByteArray(Hex.decode(cipherTests[i]), cipherTests[i + 1].getBytes());
-        }
+    byte[] decrytion = in.doFinal(encrytion, 0, encrytion.length);
 
-        for (int i = 0; i != cipherTests.length; i += 2) {
-            byte[] inputBytes = cipherTests[i + 1].getBytes();
-            ByteBuffer inputBuffer = ByteBuffer.allocateDirect(inputBytes.length);
-            inputBuffer.put(inputBytes);
-            inputBuffer.flip();
-            testByteBuffer(Hex.decode(cipherTests[i]), inputBuffer);
-        }
+    if (!Arrays.areEqual(decrytion, input)) {
+      fail("AES failed decryption");
     }
 
-    public void testAES_CBCMB() {
-        Security.addProvider(new DicerosProvider());
-        runTest(new AESCBCMBTest("AES/MBCBC/NoPadding","DC"));
-        runTest(new AESCBCMBTest("AES/MBCBC/PKCS5Padding","DC"));
+  }
+
+  @Override
+  public void performTest() throws Exception {
+    for (int i = 0; i != cipherTests.length; i += 2) {
+      testByteArray(Hex.decode(cipherTests[i]), cipherTests[i + 1].getBytes());
     }
+
+    for (int i = 0; i != cipherTests.length; i += 2) {
+      byte[] inputBytes = cipherTests[i + 1].getBytes();
+      ByteBuffer inputBuffer = ByteBuffer.allocateDirect(inputBytes.length);
+      inputBuffer.put(inputBytes);
+      inputBuffer.flip();
+      testByteBuffer(Hex.decode(cipherTests[i]), inputBuffer);
+    }
+  }
+
+  public void testAES_CBCMB() {
+    Security.addProvider(new DicerosProvider());
+    runTest(new AESCBCMBTest("AES/MBCBC/NoPadding", "DC"));
+    runTest(new AESCBCMBTest("AES/MBCBC/PKCS5Padding", "DC"));
+  }
 
 }

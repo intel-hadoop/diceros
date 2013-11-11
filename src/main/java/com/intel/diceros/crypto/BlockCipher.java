@@ -18,9 +18,9 @@
 
 package com.intel.diceros.crypto;
 
-import java.nio.ByteBuffer;
-
 import com.intel.diceros.crypto.params.CipherParameters;
+
+import java.nio.ByteBuffer;
 
 /**
  * Block cipher engines are expected to conform to this interface.

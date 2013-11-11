@@ -18,27 +18,6 @@
 
 package com.intel.diceros.provider.symmetric.util;
 
-import java.nio.ByteBuffer;
-import java.nio.ReadOnlyBufferException;
-import java.security.AlgorithmParameters;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.InvalidParameterException;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.spec.AlgorithmParameterSpec;
-import java.util.Locale;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.CipherSpi;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.ShortBufferException;
-import javax.crypto.spec.IvParameterSpec;
-
 import com.intel.diceros.crypto.BlockCipher;
 import com.intel.diceros.crypto.DataLengthException;
 import com.intel.diceros.crypto.InvalidCipherTextException;
@@ -49,6 +28,14 @@ import com.intel.diceros.crypto.params.CipherParameters;
 import com.intel.diceros.crypto.params.KeyParameter;
 import com.intel.diceros.crypto.params.ParametersWithIV;
 import com.intel.diceros.provider.DicerosProvider;
+
+import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
+import java.nio.ByteBuffer;
+import java.nio.ReadOnlyBufferException;
+import java.security.*;
+import java.security.spec.AlgorithmParameterSpec;
+import java.util.Locale;
 
 /**
  * Base Class for BlockCipher.
@@ -561,7 +548,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
       int outConsumed = cipher.processBlock(in, inOff, len, out, outOff);
 
-      if(cipher.getMode().contains("CBC"))
+      if (cipher.getMode().contains("CBC"))
         buffered = (buffered + len) % blockSize;
       return outConsumed;
     }
@@ -639,7 +626,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
       // need native process
       int n = cipher.bufferCrypt(input, output, isUpdate);
 
-      if(cipher.getMode().contains("CBC"))
+      if (cipher.getMode().contains("CBC"))
         buffered = (buffered + inLen) % blockSize;
       input.position(input.limit());
       output.position(output.position() + n);

@@ -22,37 +22,34 @@ package com.intel.diceros.crypto;
  * the foundation class for the hard exceptions thrown by the crypto packages.
  */
 public class CryptoException extends Exception {
-	private static final long serialVersionUID = -6961424805824709978L;
-	private Throwable cause;
+  private static final long serialVersionUID = -6961424805824709978L;
+  private Throwable cause;
 
-	public CryptoException() {
-	}
+  public CryptoException() {
+  }
 
-	/**
-	 * create a CryptoException with the given message.
-	 * 
-	 * @param message
-	 *          the message to be carried with the exception.
-	 */
-	public CryptoException(String message) {
-		super(message);
-	}
+  /**
+   * create a CryptoException with the given message.
+   *
+   * @param message the message to be carried with the exception.
+   */
+  public CryptoException(String message) {
+    super(message);
+  }
 
-	/**
-	 * Create a CryptoException with the given message and underlying cause.
-	 * 
-	 * @param message
-	 *          message describing exception.
-	 * @param cause
-	 *          the throwable that was the underlying cause.
-	 */
-	public CryptoException(String message, Throwable cause) {
-		super(message);
+  /**
+   * Create a CryptoException with the given message and underlying cause.
+   *
+   * @param message message describing exception.
+   * @param cause   the throwable that was the underlying cause.
+   */
+  public CryptoException(String message, Throwable cause) {
+    super(message);
 
-		this.cause = cause;
-	}
+    this.cause = cause;
+  }
 
-	public Throwable getCause() {
-		return cause;
-	}
+  public Throwable getCause() {
+    return cause;
+  }
 }

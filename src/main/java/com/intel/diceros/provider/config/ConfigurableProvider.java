@@ -23,26 +23,21 @@ package com.intel.diceros.provider.config;
  */
 public interface ConfigurableProvider {
 
-	/**
-	 * Add the <code>key</code> property with the specified <code>value</code> to
-	 * the JCE Provider Framework.
-	 * 
-	 * @param key
-	 *          the property key
-	 * @param value
-	 *          the property value
-	 */
-	void addAlgorithm(String key, String value);
+  /**
+   * Add the <code>key</code> property with the specified <code>value</code> to
+   * the JCE Provider Framework.
+   *
+   * @param key   the property key
+   * @param value the property value
+   */
+  void addAlgorithm(String key, String value);
 
-	/**
-	 * Check whether the <code>type.name</code> property has been added.
-	 * 
-	 * @param type
-	 *          the algorithm type, such Cipher, SecureRandom, Signature, etc
-	 * @param name
-	 *          the algorithm name
-	 * 
-	 * @return whether the <code>type.name</code> property has been added
-	 */
-	boolean hasAlgorithm(String type, String name);
+  /**
+   * Check whether the <code>type.name</code> property has been added.
+   *
+   * @param type the algorithm type, such Cipher, SecureRandom, Signature, etc
+   * @param name the algorithm name
+   * @return whether the <code>type.name</code> property has been added
+   */
+  boolean hasAlgorithm(String type, String name);
 }

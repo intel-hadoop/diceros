@@ -23,30 +23,27 @@ package com.intel.diceros.crypto;
  * message.
  */
 public class InvalidCipherTextException extends CryptoException {
-	private static final long serialVersionUID = -312034505940387201L;
+  private static final long serialVersionUID = -312034505940387201L;
 
-	public InvalidCipherTextException() {
-	}
+  public InvalidCipherTextException() {
+  }
 
-	/**
-	 * create a InvalidCipherTextException with the given message.
-	 * 
-	 * @param message
-	 *          the message to be carried with the exception.
-	 */
-	public InvalidCipherTextException(String message) {
-		super(message);
-	}
+  /**
+   * create a InvalidCipherTextException with the given message.
+   *
+   * @param message the message to be carried with the exception.
+   */
+  public InvalidCipherTextException(String message) {
+    super(message);
+  }
 
-	/**
-	 * create a InvalidCipherTextException with the given message.
-	 * 
-	 * @param message
-	 *          the message to be carried with the exception.
-	 * @param cause
-	 *          the root cause of the exception.
-	 */
-	public InvalidCipherTextException(String message, Throwable cause) {
-		super(message, cause);
-	}
+  /**
+   * create a InvalidCipherTextException with the given message.
+   *
+   * @param message the message to be carried with the exception.
+   * @param cause   the root cause of the exception.
+   */
+  public InvalidCipherTextException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

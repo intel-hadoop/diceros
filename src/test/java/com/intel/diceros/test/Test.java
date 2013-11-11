@@ -19,7 +19,7 @@
 package com.intel.diceros.test;
 
 public interface Test {
-	String getName();
+  String getName();
 
-	TestResult perform();
+  TestResult perform();
 }

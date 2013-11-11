@@ -22,20 +22,20 @@ import com.intel.diceros.provider.DicerosProvider;
 
 import java.security.Security;
 
-public class AESCBCTest extends AESAbstarctTest{
+public class AESCBCTest extends AESAbstarctTest {
 
-    public AESCBCTest(){
+  public AESCBCTest() {
 
-    }
+  }
 
-    public AESCBCTest(String cipherName, String providerName) {
-        super(cipherName, providerName);
-    }
+  public AESCBCTest(String cipherName, String providerName) {
+    super(cipherName, providerName);
+  }
 
-    public void testAESCTR() {
-        Security.addProvider(new DicerosProvider());
-        runTest(new AESCBCTest("AES/CBC/NoPadding","DC"));
-        runTest(new AESCBCTest("AES/CBC/PKCS5Padding","DC"));
-    }
+  public void testAESCTR() {
+    Security.addProvider(new DicerosProvider());
+    runTest(new AESCBCTest("AES/CBC/NoPadding", "DC"));
+    runTest(new AESCBCTest("AES/CBC/PKCS5Padding", "DC"));
+  }
 
 }

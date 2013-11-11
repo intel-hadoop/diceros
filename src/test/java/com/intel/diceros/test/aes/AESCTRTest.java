@@ -22,19 +22,19 @@ import com.intel.diceros.provider.DicerosProvider;
 
 import java.security.Security;
 
-public class AESCTRTest extends AESAbstarctTest{
+public class AESCTRTest extends AESAbstarctTest {
 
-    public AESCTRTest(){
+  public AESCTRTest() {
 
-    }
+  }
 
-    public AESCTRTest(String cipherName, String providerName) {
-        super(cipherName,providerName);
-    }
+  public AESCTRTest(String cipherName, String providerName) {
+    super(cipherName, providerName);
+  }
 
-    public void testAESCTR() {
-        Security.addProvider(new DicerosProvider());
-        runTest(new AESCTRTest("AES/CTR/NoPadding","DC"));
-    }
+  public void testAESCTR() {
+    Security.addProvider(new DicerosProvider());
+    runTest(new AESCTRTest("AES/CTR/NoPadding", "DC"));
+  }
 
 }

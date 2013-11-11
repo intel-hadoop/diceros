@@ -21,12 +21,11 @@ package com.intel.diceros.provider.util;
 import com.intel.diceros.provider.config.ConfigurableProvider;
 
 public abstract class AlgorithmProvider {
-	/**
-	 * Configure the <code>provider</code>, load the algorithms implemented by
-	 * this class to the JCE Framework.
-	 * 
-	 * @param provider
-	 *          the provider class
-	 */
-	public abstract void configure(ConfigurableProvider provider);
+  /**
+   * Configure the <code>provider</code>, load the algorithms implemented by
+   * this class to the JCE Framework.
+   *
+   * @param provider the provider class
+   */
+  public abstract void configure(ConfigurableProvider provider);
 }

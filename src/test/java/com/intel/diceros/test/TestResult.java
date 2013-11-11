@@ -19,9 +19,9 @@
 package com.intel.diceros.test;
 
 public interface TestResult {
-	public boolean isSuccessful();
+  public boolean isSuccessful();
 
-	public Throwable getException();
+  public Throwable getException();
 
-	public String toString();
+  public String toString();
 }

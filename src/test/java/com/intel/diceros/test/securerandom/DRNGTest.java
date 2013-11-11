@@ -18,11 +18,11 @@
 
 package com.intel.diceros.test.securerandom;
 
-import java.security.SecureRandom;
-import java.security.Security;
-
 import com.intel.diceros.provider.DicerosProvider;
 import com.intel.diceros.test.BaseBlockCipherTest;
+
+import java.security.SecureRandom;
+import java.security.Security;
 
 /**
  * This class does the correctness test of SecureRandom based on DRNG(Intel®
@@ -30,20 +30,20 @@ import com.intel.diceros.test.BaseBlockCipherTest;
  */
 public class DRNGTest extends BaseBlockCipherTest {
 
-	public DRNGTest() {
-		super("DRNG");
-	}
+  public DRNGTest() {
+    super("DRNG");
+  }
 
-	public void testDRNG() {
-		Security.addProvider(new DicerosProvider());
-		runTest(new DRNGTest());
-	}
+  public void testDRNG() {
+    Security.addProvider(new DicerosProvider());
+    runTest(new DRNGTest());
+  }
 
-	@Override
-	public void performTest() throws Exception {
-		SecureRandom random = SecureRandom.getInstance("DRNG", "DC");
-		random.nextDouble();
-		byte[] bytes = new byte[20];
-		random.nextBytes(bytes);
-	}
+  @Override
+  public void performTest() throws Exception {
+    SecureRandom random = SecureRandom.getInstance("DRNG", "DC");
+    random.nextDouble();
+    byte[] bytes = new byte[20];
+    random.nextBytes(bytes);
+  }
 }

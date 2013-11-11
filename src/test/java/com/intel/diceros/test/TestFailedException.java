@@ -19,15 +19,15 @@
 package com.intel.diceros.test;
 
 public class TestFailedException extends RuntimeException {
-	private static final long serialVersionUID = 9118892939925088192L;
-	
-	private TestResult _result;
+  private static final long serialVersionUID = 9118892939925088192L;
 
-	public TestFailedException(TestResult result) {
-		_result = result;
-	}
+  private TestResult _result;
 
-	public TestResult getResult() {
-		return _result;
-	}
+  public TestFailedException(TestResult result) {
+    _result = result;
+  }
+
+  public TestResult getResult() {
+    return _result;
+  }
 }
