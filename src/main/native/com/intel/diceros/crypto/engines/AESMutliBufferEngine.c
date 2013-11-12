@@ -75,9 +75,14 @@ CipherContext* initContext(void* handle, jbyte* key, int keylen, jbyte* iv, int 
 
 void opensslResetContext(int mode, EVP_CIPHER_CTX* context, sAesContext* aesmbCtx)
 {
+  opensslResetContextMB(mode, context, aesmbCtx, 0);
+}
+
+void opensslResetContextMB(int mode, EVP_CIPHER_CTX* context, sAesContext* aesmbCtx, int count)
+{
   int keyLength = aesmbCtx->keyLength;
   unsigned char* nativeKey = (unsigned char*)aesmbCtx->key;
-  unsigned char* nativeIv = (unsigned char*)aesmbCtx->iv;
+  unsigned char* nativeIv = (unsigned char*)aesmbCtx->iv + count*16;
 
   EVP_CIPHER_CTX_init(context);
   
@@ -337,7 +342,7 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngin
         for (i = 0 ; i < PARALLEL_LEVEL; i++) {
           //reset open ssl context
           EVP_CIPHER_CTX_cleanup(ctx);
-          opensslResetContext(ctx->encrypt, ctx, aesCtx);
+          opensslResetContextMB(ctx->encrypt, ctx, aesCtx,i);
           //clear padding, since multi-buffer AES did not have padding
           EVP_CIPHER_CTX_set_padding(ctx, 0);
           //decrypt using open ssl
@@ -447,7 +452,7 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngin
         for (i = 0 ; i < PARALLEL_LEVEL; i++) {
           //reset open ssl context
           EVP_CIPHER_CTX_cleanup(ctx);
-          opensslResetContext(ctx->encrypt, ctx, aesCtx);
+          opensslResetContextMB(ctx->encrypt, ctx, aesCtx, i);
           //clear padding, since multi-buffer AES did not have padding
           EVP_CIPHER_CTX_set_padding(ctx, 0);
           //decrypt using open ssl

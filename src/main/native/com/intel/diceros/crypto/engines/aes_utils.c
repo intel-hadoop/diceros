@@ -282,6 +282,10 @@ int aesmb_ivinit(sAesContext* ctx, uint8_t* iv, int ivLength)
   int i,j = 0;
   for (i = 0 ; i < PARALLEL_LEVEL ; i++) {
     memcpy(ctx->iv + i * ivLength, iv, ivLength);
+    // generate seven different IVs
+    for(j=0 ;j <16 ;j++){
+      *(iv+j) = *(iv+j) +1 ;
+    }
   }
 
   return ivLength - BLOCKSIZE;
