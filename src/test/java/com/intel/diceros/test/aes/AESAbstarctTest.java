@@ -157,9 +157,8 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
    * @throws BadPaddingException
    */
   protected void testByteBuffer(byte[] keyBytes, ByteBuffer input)
-          throws NoSuchAlgorithmException, NoSuchProviderException,
-          NoSuchPaddingException, ShortBufferException, Exception,
-          BadPaddingException {
+      throws NoSuchAlgorithmException, NoSuchProviderException,
+      NoSuchPaddingException, ShortBufferException, BadPaddingException, IllegalBlockSizeException {
     ByteBuffer output = ByteBuffer.allocateDirect(BYTEBUFFER_SIZE);
     ByteBuffer decResult = ByteBuffer.allocateDirect(BYTEBUFFER_SIZE);
     Key key;
@@ -255,7 +254,7 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
     //
     output.put(enc.update(inputByteArray));
     enc.update(inputByteBuffer, output);
-    enc.doFinal();
+    output.put(enc.doFinal());
     output.flip();
 
     //

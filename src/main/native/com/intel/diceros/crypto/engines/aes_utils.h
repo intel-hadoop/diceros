@@ -20,7 +20,7 @@
 #define __AES_UTILS_H
 
 #include <stdlib.h>
-#include <aesmb/aes_api.h>
+#include <aes_api.h>
 
 #ifdef DEBUG
 #include <stdio.h>

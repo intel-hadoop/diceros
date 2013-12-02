@@ -59,6 +59,13 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <argLine>-Djava.library.path=target/native/target/usr/local/lib/</argLine>
+                        </configuration>
+                    </plugin>
+                    <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>native-maven-plugin</artifactId>
                         <version>1.0-alpha-7</version>
@@ -96,6 +103,17 @@
                                 </goals>
                                 <configuration>
                                     <target>
+                                        <copy todir="${project.build.directory}/native/aesmb/">
+                                            <fileset dir="src/main/native/aesmb/">
+                                                <exclude name='**/*svn' />
+                                            </fileset>
+                                        </copy>
+                                        <exec executable="make" dir="${project.build.directory}/native/aesmb/"
+                                              failonerror="true">
+                                            <arg line="YASM_BIN=/usr/local/bin/yasm"/>
+                                        </exec>
+                                        <copy file="${project.build.directory}/native/aesmb/libaesmb.so" tofile="${project.build.directory}/native/target/usr/local/lib/libaesmb.so"/>
+
                                         <exec executable="cmake" dir="${project.build.directory}/native"
                                               failonerror="true">
                                             <arg line="${basedir}/src/ -DGENERATED_JAVAH=${project.build.directory}/native/javah -DJVM_ARCH_DATA_MODEL=${sun.arch.data.model} -DREQUIRE_CRYPTO=${require.crypto} -DCUSTOM_CRYPTO_PREFIX=${crypto.prefix} -DCUSTOM_CRYPTO_LIB=${crypto.lib} -DCUSTOM_CRYPTO_INCLUDE=${crypto.include} -DREQUIRE_AESMB=${require.aesmb} -DCUSTOM_AESMB_PREFIX=${aesmb.prefix} -DCUSTOM_AESMB_LIB=${aesmb.lib} -DCUSTOM_AESMB_INCLUDE=${aesmb.include}"/>
