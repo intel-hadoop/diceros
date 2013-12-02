@@ -50,6 +50,7 @@
                 <crypto.prefix></crypto.prefix>
                 <crypto.lib></crypto.lib>
                 <crypto.include></crypto.include>
+                <yasm.prefix>/usr/local/bin/</yasm.prefix>
                 <require.crypto>true</require.crypto>
                 <aesmb.prefix></aesmb.prefix>
                 <aesmb.lib></aesmb.lib>
@@ -58,13 +59,6 @@
             </properties>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <argLine>-Djava.library.path=target/native/target/usr/local/lib/</argLine>
-                        </configuration>
-                    </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>native-maven-plugin</artifactId>
@@ -110,7 +104,7 @@
                                         </copy>
                                         <exec executable="make" dir="${project.build.directory}/native/aesmb/"
                                               failonerror="true">
-                                            <arg line="YASM_BIN=/usr/local/bin/yasm"/>
+                                            <arg line="YASM_BIN=${yasm.prefix}yasm"/>
                                         </exec>
                                         <copy file="${project.build.directory}/native/aesmb/libaesmb.so" tofile="${project.build.directory}/native/target/usr/local/lib/libaesmb.so"/>
 
@@ -128,6 +122,13 @@
                                 </configuration>
                             </execution>
                         </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <argLine>-Djava.library.path=target/native/target/usr/local/lib/</argLine>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
