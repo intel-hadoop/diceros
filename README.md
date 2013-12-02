@@ -224,10 +224,11 @@ AES-NI
 
 * software prerequisite:   
 <p>openssl-1.0.1c or above(just test openssl-1.0.1e);  </p> 
+<p>yasm-1.2.0 </p>
 <p>openjdk7;    </p>
-<p>add "libdiceros.so"(which is generated after build) to the environment variable "java.library.path"; </p>
+<p>add "libdiceros.so"(which is generated after build)  and "libaesmb.so" to the environment variable "java.library.path"; </p>
 <p>add "diceros-1.0.0.jar"(which is generated after build) to the classpath; </p>
-<p>if you are using the cipher of "AES/MBCBC/PKCS5PADDING", add "libaesmb.so"(which is the lib of Multi-Buffer) to the environment variable "java.library.path". </p>
+
 
 * static deploy:   
 add line "security.provider.10=com.intel.diceros.provider.DicerosProvider" in file "\<java-home\>\lib\security\java.security"
