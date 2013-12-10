@@ -29,6 +29,9 @@ https://github.com/intel-hadoop/diceros/wiki/Quick-Start
 ### Validate
 `mvn test`
 
+### Download Binary Releases
+https://github.com/intel-hadoop/diceros/releases
+
 ### Deploy
 #### Static deploy:   
 Add line `security.provider.10=com.intel.diceros.provider.DicerosProvider` in file `\<java-home\>\lib\security\java.security`
