@@ -40,7 +40,7 @@ public final class DicerosProvider extends Provider implements
 
   private static final long serialVersionUID = -5933716767994628685L;
 
-  private static String info = "Diceros Provider v1.0, implementing AES encryption of CTR mode and SecureRandom based on DRNG";
+  private static String info = "Diceros Provider v1.0, implementing AES encryption of CTR mode, CBC mode, MBCBC mode and SecureRandom based on DRNG";
   private static final String SYMMETRIC_PACKAGE = "com.intel.diceros.provider.symmetric.";
   private static final String[] SYMMETRIC_CIPHERS = {"AES"};
   private static final String SECURERANDOM_PACKAGE = "com.intel.diceros.provider.securerandom.";

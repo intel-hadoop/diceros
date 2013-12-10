@@ -116,16 +116,16 @@ public interface BlockCipher {
    *
    * @param padding padding type for the cipher
    */
-  public void setPadding(String padding);
+  public void setPadding(int padding);
 
   /**
    * Get the mode of the cipher.
    *
    * @return get the mode of the cipher
    */
-  public String getMode();
+  public int getMode();
 
-  public String getPadding();
+  public int getPadding();
 
   public int getHeadLength();
 }

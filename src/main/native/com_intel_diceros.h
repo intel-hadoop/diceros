@@ -20,8 +20,20 @@
  * This file includes some common utilities
  * for all native code used in crypto.
  */
-#if !defined ORG_APACHE_HADOOP_H
+#include <jni.h>
+#include <openssl/evp.h>
+
+#ifndef ORG_APACHE_HADOOP_H
 #define ORG_APACHE_HADOOP_H
+
+#define ENCRYPTION 1
+#define DECRYPTION 0
+
+#define MODE_CTR 0
+#define MODE_CBC 1
+
+#define PADDING_NOPADDING 0
+#define PADDING_PKCS5PADDING 1
 
 #if defined(_WIN32)
 #undef UNIX
@@ -30,6 +42,28 @@
 #undef WINDOWS
 #define UNIX
 #endif
+
+typedef struct {
+	EVP_CIPHER_CTX* context;
+	jbyte* nativeKey;
+	long keyLength;
+	jbyte* nativeIv;
+	long ivLength;
+} AESContext;
+
+typedef int (*cryptInit)(EVP_CIPHER_CTX *, const EVP_CIPHER *, ENGINE *,
+		const unsigned char *, const unsigned char *);
+typedef int (*cryptUpdate)(EVP_CIPHER_CTX *, unsigned char *, int *,
+		const unsigned char *, int);
+typedef int (*cryptFinal)(EVP_CIPHER_CTX*, unsigned char *, int *);
+
+cryptInit getCryptInitFunc(jboolean forEncryption);
+
+cryptUpdate getCryptUpdateFunc(jboolean forEncryption);
+
+cryptFinal getCryptFinalFunc(jboolean forEncryption);
+
+AESContext* preInitContext(JNIEnv *env, AESContext* aesCtx, jint mode, jbyteArray key, jbyteArray IV);
 
 /* A helper macro to 'throw' a java exception. */
 #define THROW(env, exception_name, message) \

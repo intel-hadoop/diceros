@@ -32,7 +32,7 @@ public class AESCBCTest extends AESAbstarctTest {
     super(cipherName, providerName);
   }
 
-  public void testAESCTR() {
+  public void testAESCBC() {
     Security.addProvider(new DicerosProvider());
     runTest(new AESCBCTest("AES/CBC/NoPadding", "DC"));
     runTest(new AESCBCTest("AES/CBC/PKCS5Padding", "DC"));

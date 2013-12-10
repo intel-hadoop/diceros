@@ -22,6 +22,7 @@ import com.intel.diceros.crypto.BlockCipher;
 import com.intel.diceros.crypto.DataLengthException;
 import com.intel.diceros.crypto.params.CipherParameters;
 import com.intel.diceros.crypto.params.ParametersWithIV;
+import com.intel.diceros.provider.symmetric.util.Constants;
 
 import java.nio.ByteBuffer;
 
@@ -127,7 +128,7 @@ public class CBCBlockCipher implements BlockCipher {
      * passed to EVP_DecryptUpdate() should have sufficient room for (inl + cipher_block_size) bytes
      * unless the cipher block size is 1 in which case inl bytes is sufficient.
      */
-    if (!this.encrypting && this.cipher.getPadding().equals("PKCS5PADDING")
+    if (!this.encrypting && this.cipher.getPadding() == Constants.PADDING_PKCS5PADDING
             && inLen > out.length - outOff) {
       throw new DataLengthException("Need at least " + inLen +
               " bytes of space in output.");
@@ -157,17 +158,17 @@ public class CBCBlockCipher implements BlockCipher {
   }
 
   @Override
-  public void setPadding(String padding) {
+  public void setPadding(int padding) {
     cipher.setPadding(padding);
   }
 
   @Override
-  public String getMode() {
+  public int getMode() {
     return cipher.getMode();
   }
 
   @Override
-  public String getPadding() {
+  public int getPadding() {
     return cipher.getPadding();
   }
 

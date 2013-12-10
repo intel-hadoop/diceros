@@ -22,6 +22,7 @@ import com.intel.diceros.crypto.BlockCipher;
 import com.intel.diceros.crypto.DataLengthException;
 import com.intel.diceros.crypto.params.CipherParameters;
 import com.intel.diceros.crypto.params.KeyParameter;
+import com.intel.diceros.provider.symmetric.util.Constants;
 
 import java.nio.ByteBuffer;
 
@@ -29,18 +30,18 @@ public class AESMutliBufferEngine implements BlockCipher {
 
   private boolean forEncryption = false;
   private int blockSize = 16;
-  private String mode;
-  private String padding = "NOPADDING";
+  private int mode;
+  private int padding = Constants.PADDING_PKCS5PADDING;
   private byte[] IV;
   private int head = 2;
   CipherParameters params = null;
   private long context = 0; // context used by openssl
 
-  public AESMutliBufferEngine(String mode) {
+  public AESMutliBufferEngine(int mode) {
     this.mode = mode;
   }
 
-  public AESMutliBufferEngine(String mode, String padding) {
+  public AESMutliBufferEngine(int mode, int padding) {
     this.mode = mode;
     this.padding = padding;
   }
@@ -51,7 +52,7 @@ public class AESMutliBufferEngine implements BlockCipher {
     if (params instanceof KeyParameter) {
       this.forEncryption = forEncryption;
       this.params = params;
-      context = init(forEncryption ? 1 : 0, ((KeyParameter) params).getKey(), IV, padding, context);
+      context = init(forEncryption, ((KeyParameter) params).getKey(), IV, padding, context);
     } else {
       throw new IllegalArgumentException(
               "invalid parameter passed to AES init - "
@@ -98,7 +99,7 @@ public class AESMutliBufferEngine implements BlockCipher {
   private native int bufferCrypt(long context, ByteBuffer inputDirectBuffer, int start,
                                  int inputLength, ByteBuffer outputDirectBuffer, int begin, boolean isUpdate);
 
-  protected native long init(int mode, byte[] key, byte[] iv, String padding, long oldContext);
+  protected native long init(boolean forEncryption, byte[] key, byte[] iv, int padding, long oldContext);
 
   private native int doFinal(long context, byte[] out, int outOff);
 
@@ -117,17 +118,17 @@ public class AESMutliBufferEngine implements BlockCipher {
   }
 
   @Override
-  public void setPadding(String padding) {
+  public void setPadding(int padding) {
     this.padding = padding;
   }
 
   @Override
-  public String getMode() {
+  public int getMode() {
     return this.mode;
   }
 
   @Override
-  public String getPadding() {
+  public int getPadding() {
     return this.padding;
   }
 

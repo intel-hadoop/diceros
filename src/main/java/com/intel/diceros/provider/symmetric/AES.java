@@ -24,6 +24,7 @@ import com.intel.diceros.crypto.engines.AESOpensslEngine;
 import com.intel.diceros.provider.config.ConfigurableProvider;
 import com.intel.diceros.provider.symmetric.util.BaseBlockCipher;
 import com.intel.diceros.provider.symmetric.util.BlockCipherProvider;
+import com.intel.diceros.provider.symmetric.util.Constants;
 import com.intel.diceros.provider.util.AlgorithmProvider;
 
 import javax.crypto.*;
@@ -65,7 +66,7 @@ public class AES {
             NoSuchProviderException {
       super(new BlockCipherProvider() {
         public BlockCipher get() {
-          return new AESOpensslEngine("CTR");
+          return new AESOpensslEngine(Constants.MODE_CTR);
         }
       });
 
@@ -257,7 +258,7 @@ public class AES {
             NoSuchProviderException {
       super(new BlockCipherProvider() {
         public BlockCipher get() {
-          return new AESOpensslEngine("CBC");
+          return new AESOpensslEngine(Constants.MODE_CBC);
         }
       });
 
@@ -454,7 +455,7 @@ public class AES {
             NoSuchProviderException {
       super(new BlockCipherProvider() {
         public BlockCipher get() {
-          return new AESMutliBufferEngine("CBC");
+          return new AESMutliBufferEngine(Constants.MODE_CBC);
         }
       });
 

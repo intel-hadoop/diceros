@@ -38,7 +38,8 @@ public class AESCBCMBTest extends AESAbstarctTest {
     super(cipherName, providerName);
   }
 
-  protected void testByteArray(byte[] keyBytes, byte[] input) throws Exception {
+  @Override
+  protected void byteArrayTest(byte[] keyBytes, byte[] input) throws Exception {
     Key key;
     Cipher in, out;
 
@@ -74,13 +75,12 @@ public class AESCBCMBTest extends AESAbstarctTest {
     if (!Arrays.areEqual(decrytion, input)) {
       fail("AES failed decryption");
     }
-
   }
 
   @Override
   public void performTest() throws Exception {
     for (int i = 0; i != cipherTests.length; i += 2) {
-      testByteArray(Hex.decode(cipherTests[i]), cipherTests[i + 1].getBytes());
+      byteArrayTest(Hex.decode(cipherTests[i]), cipherTests[i + 1].getBytes());
     }
 
     for (int i = 0; i != cipherTests.length; i += 2) {
@@ -88,14 +88,17 @@ public class AESCBCMBTest extends AESAbstarctTest {
       ByteBuffer inputBuffer = ByteBuffer.allocateDirect(inputBytes.length);
       inputBuffer.put(inputBytes);
       inputBuffer.flip();
-      testByteBuffer(Hex.decode(cipherTests[i]), inputBuffer);
+      byteBufferTest(Hex.decode(cipherTests[i]), inputBuffer);
     }
   }
 
-  public void testAES_CBCMB() {
+  public void testAESCBCMB() {
     Security.addProvider(new DicerosProvider());
-    runTest(new AESCBCMBTest("AES/MBCBC/NoPadding", "DC"));
     runTest(new AESCBCMBTest("AES/MBCBC/PKCS5Padding", "DC"));
+  }
+  
+  public static void main(String[] args) {
+  	new AESCBCMBTest().testAESCBCMB();
   }
 
 }

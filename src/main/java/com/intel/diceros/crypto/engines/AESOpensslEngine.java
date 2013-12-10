@@ -22,6 +22,7 @@ import com.intel.diceros.crypto.BlockCipher;
 import com.intel.diceros.crypto.DataLengthException;
 import com.intel.diceros.crypto.params.CipherParameters;
 import com.intel.diceros.crypto.params.KeyParameter;
+import com.intel.diceros.provider.symmetric.util.Constants;
 
 import java.nio.ByteBuffer;
 
@@ -32,17 +33,17 @@ import java.nio.ByteBuffer;
 public class AESOpensslEngine implements BlockCipher {
   private boolean forEncryption = false;
   private int blockSize = 16;
-  private String mode;
-  private String padding = "NOPADDING";
+  private int mode;
+  private int padding = Constants.PADDING_NOPADDING;
   private byte[] IV;
   CipherParameters params = null;
-  private long context = 0; // context used by openssl
+  private long aesContext = 0; // context used by openssl
 
-  public AESOpensslEngine(String mode) {
+  public AESOpensslEngine(int mode) {
     this.mode = mode;
   }
 
-  public AESOpensslEngine(String mode, String padding) {
+  public AESOpensslEngine(int mode, int padding) {
     this.mode = mode;
     this.padding = padding;
   }
@@ -53,8 +54,8 @@ public class AESOpensslEngine implements BlockCipher {
     if (params instanceof KeyParameter) {
       this.forEncryption = forEncryption;
       this.params = params;
-      context = initWorkingKey(((KeyParameter) params).getKey(), forEncryption,
-              mode, padding, IV, context);
+      aesContext = initWorkingKey(((KeyParameter) params).getKey(), forEncryption,
+              mode, padding, IV, aesContext);
     } else {
       throw new IllegalArgumentException(
               "invalid parameter passed to AES init - "
@@ -75,32 +76,32 @@ public class AESOpensslEngine implements BlockCipher {
   @Override
   public int processBlock(byte[] in, int inOff, int inLen, byte[] out,
                           int outOff) throws DataLengthException, IllegalStateException {
-    return processBlock(context, in, inOff, inLen, out, outOff);
+    return processBlock(aesContext, in, inOff, inLen, out, outOff);
   }
 
   @Override
   public int doFinal(byte[] out, int outOff) {
-    return doFinal(context, out, outOff);
+    return doFinal(aesContext, out, outOff);
   }
 
   @Override
   public void reset() {
-    init(forEncryption, params);
+  	if (this.mode != Constants.MODE_CTR) {
+  		init(forEncryption, params);
+  	}
   }
 
   @Override
   public int bufferCrypt(ByteBuffer input, ByteBuffer output, boolean isUpdate) {
-    return bufferCrypt(context, input, input.position(), input.limit(), output,
+    return bufferCrypt(aesContext, input, input.position(), input.limit(), output,
             output.position(), isUpdate);
   }
-
-  private native int getBlockSize(long context);
 
   private native int bufferCrypt(long context, ByteBuffer input, int inputPos,
                                  int inputLimit, ByteBuffer output, int outputPos, boolean isUpdate);
 
   private native long initWorkingKey(byte[] key, boolean forEncryption,
-                                     String mode, String padding, byte[] IV, long context);
+                                     int mode, int padding, byte[] IV, long aesContext);
 
   private native int processBlock(long context, byte[] in, int inOff,
                                   int inLen, byte[] out, int outOff);
@@ -113,17 +114,17 @@ public class AESOpensslEngine implements BlockCipher {
   }
 
   @Override
-  public void setPadding(String padding) {
+  public void setPadding(int padding) {
     this.padding = padding;
   }
 
   @Override
-  public String getMode() {
+  public int getMode() {
     return this.mode;
   }
 
   @Override
-  public String getPadding() {
+  public int getPadding() {
     return this.padding;
   }
 

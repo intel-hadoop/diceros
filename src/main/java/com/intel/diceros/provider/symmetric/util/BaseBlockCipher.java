@@ -76,11 +76,11 @@ public abstract class BaseBlockCipher extends CipherSpi {
     baseEngine = provider.get();
     cipher = new GenericBlockCipherImpl(baseEngine);
 
-    String modeName = baseEngine.getMode();
-    if (modeName.startsWith("CTR")) {
+    int modeName = baseEngine.getMode();
+    if (modeName == Constants.MODE_CTR) {
       cipher = new GenericBlockCipherImpl(new CTRBlockCipher(baseEngine));
       ivLength = baseEngine.getBlockSize();
-    } else if (modeName.startsWith("CBC")) {
+    } else if (modeName == Constants.MODE_CBC) {
       cipher = new GenericBlockCipherImpl(new CBCBlockCipher(baseEngine));
       ivLength = baseEngine.getBlockSize();
     }
@@ -548,7 +548,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
       int outConsumed = cipher.processBlock(in, inOff, len, out, outOff);
 
-      if (cipher.getMode().contains("CBC"))
+      if (cipher.getMode() == Constants.MODE_CBC)
         buffered = (buffered + len) % blockSize;
       return outConsumed;
     }
@@ -626,7 +626,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
       // need native process
       int n = cipher.bufferCrypt(input, output, isUpdate);
 
-      if (cipher.getMode().contains("CBC"))
+      if (cipher.getMode() == Constants.MODE_CBC)
         buffered = (buffered + inLen) % blockSize;
       input.position(input.limit());
       output.position(output.position() + n);
@@ -659,7 +659,12 @@ public abstract class BaseBlockCipher extends CipherSpi {
                 " mode must be used with NoPadding");
       }
       this.padding = paddingName;
-      cipher.setPadding(paddingName);
+      
+      if (paddingName.equalsIgnoreCase("NoPadding")) {
+      	cipher.setPadding(Constants.PADDING_NOPADDING);
+      } else if (paddingName.equalsIgnoreCase("PKCS5Padding")) {
+      	cipher.setPadding(Constants.PADDING_PKCS5PADDING);
+      }
     }
   }
 }

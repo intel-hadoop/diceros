@@ -73,7 +73,7 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
    * @param input the input data
    * @throws Exception
    */
-  protected void testByteArray(byte[] keyBytes, byte[] input) throws Exception {
+  protected void byteArrayTest(byte[] keyBytes, byte[] input) throws Exception {
     Key key;
     Cipher in, out;
     CipherInputStream cIn;
@@ -156,7 +156,7 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
    * @throws Exception
    * @throws BadPaddingException
    */
-  protected void testByteBuffer(byte[] keyBytes, ByteBuffer input)
+  protected void byteBufferTest(byte[] keyBytes, ByteBuffer input)
       throws NoSuchAlgorithmException, NoSuchProviderException,
       NoSuchPaddingException, ShortBufferException, BadPaddingException, IllegalBlockSizeException {
     ByteBuffer output = ByteBuffer.allocateDirect(BYTEBUFFER_SIZE);
@@ -166,8 +166,8 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
 
     key = new SecretKeySpec(keyBytes, "AES");
 
-    enc = Cipher.getInstance("AES/CTR/NoPadding", "DC");
-    dec = Cipher.getInstance("AES/CTR/NoPadding", "DC");
+    enc = Cipher.getInstance(this.cipherName, this.providerName);
+    dec = Cipher.getInstance(this.cipherName, this.providerName);
 
     try {
       enc.init(Cipher.ENCRYPT_MODE, key);
@@ -222,7 +222,7 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
    * @throws Exception
    * @throws BadPaddingException
    */
-  protected void testMix(byte[] keyBytes, byte[] inputByteArray,
+  protected void mixTest(byte[] keyBytes, byte[] inputByteArray,
                          ByteBuffer inputByteBuffer) throws NoSuchAlgorithmException,
           NoSuchProviderException, NoSuchPaddingException, ShortBufferException,
           Exception, BadPaddingException {
@@ -285,7 +285,7 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
    */
   public void performTest() throws Exception {
     for (int i = 0; i != cipherTests.length; i += 2) {
-      testByteArray(Hex.decode(cipherTests[i]), cipherTests[i + 1].getBytes());
+      byteArrayTest(Hex.decode(cipherTests[i]), cipherTests[i + 1].getBytes());
     }
 
     for (int i = 0; i != cipherTests.length; i += 2) {
@@ -293,7 +293,7 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
       ByteBuffer inputBuffer = ByteBuffer.allocateDirect(inputBytes.length);
       inputBuffer.put(inputBytes);
       inputBuffer.flip();
-      testByteBuffer(Hex.decode(cipherTests[i]), inputBuffer);
+      byteBufferTest(Hex.decode(cipherTests[i]), inputBuffer);
     }
 
     for (int i = 0; i != cipherTests.length; i += 2) {
@@ -301,7 +301,7 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
       ByteBuffer inputBuffer = ByteBuffer.allocateDirect(inputBytes.length);
       inputBuffer.put(inputBytes);
       inputBuffer.flip();
-      testMix(Hex.decode(cipherTests[i]), inputBytes, inputBuffer);
+      mixTest(Hex.decode(cipherTests[i]), inputBytes, inputBuffer);
     }
   }
 

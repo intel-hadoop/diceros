@@ -111,7 +111,7 @@ public class CTRBlockCipher implements BlockCipher {
   }
 
   @Override
-  public void setPadding(String padding) {
+  public void setPadding(int padding) {
     cipher.setPadding(padding);
   }
 
@@ -122,12 +122,12 @@ public class CTRBlockCipher implements BlockCipher {
   }
 
   @Override
-  public String getMode() {
+  public int getMode() {
     return cipher.getMode();
   }
 
   @Override
-  public String getPadding() {
+  public int getPadding() {
     return cipher.getPadding();
   }
 

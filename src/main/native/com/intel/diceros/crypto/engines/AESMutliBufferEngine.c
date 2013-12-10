@@ -27,9 +27,6 @@
 #include "com_intel_diceros_crypto_engines_AESMutliBufferEngine.h"
 #include "aes_utils.h"
 
-#define ENCRYPTION 1
-#define DECRYPTION 0
-
 typedef struct _CipherContext {
   EVP_CIPHER_CTX* opensslCtx;
   sAesContext* aesmbCtx;
@@ -73,35 +70,29 @@ CipherContext* initContext(void* handle, jbyte* key, int keylen, jbyte* iv, int 
   return ctx;
 }
 
-void opensslResetContext(int mode, EVP_CIPHER_CTX* context, sAesContext* aesmbCtx)
+void opensslResetContext(jboolean forEncryption, EVP_CIPHER_CTX* context, sAesContext* aesmbCtx)
 {
-  opensslResetContextMB(mode, context, aesmbCtx, 0);
+  opensslResetContextMB(forEncryption, context, aesmbCtx, 0);
 }
 
-void opensslResetContextMB(int mode, EVP_CIPHER_CTX* context, sAesContext* aesmbCtx, int count)
-{
-  int keyLength = aesmbCtx->keyLength;
-  unsigned char* nativeKey = (unsigned char*)aesmbCtx->key;
-  unsigned char* nativeIv = (unsigned char*)aesmbCtx->iv + count*16;
+void opensslResetContextMB(jboolean forEncryption, EVP_CIPHER_CTX* context,
+		sAesContext* aesmbCtx, int count) {
+	int keyLength = aesmbCtx->keyLength;
+	unsigned char* nativeKey = (unsigned char*) aesmbCtx->key;
+	unsigned char* nativeIv = (unsigned char*) aesmbCtx->iv + count * 16;
 
-  EVP_CIPHER_CTX_init(context);
-  
-  if (mode == ENCRYPTION) {
-    if (keyLength == 32) {
-      EVP_EncryptInit_ex(context, EVP_aes_256_cbc(), NULL, (unsigned char *)nativeKey, (unsigned char *)nativeIv);
-    }
-    else if (keyLength == 16) {
-      EVP_EncryptInit_ex(context, EVP_aes_128_cbc(), NULL, (unsigned char *)nativeKey, (unsigned char *)nativeIv);
-    }
-  }
-  else {
-    if (keyLength == 32) {
-      EVP_DecryptInit_ex(context, EVP_aes_256_cbc(), NULL, (unsigned char *)nativeKey, (unsigned char *)nativeIv);
-    }
-    else if (keyLength == 16) {
-      EVP_DecryptInit_ex(context, EVP_aes_128_cbc(), NULL, (unsigned char *)nativeKey, (unsigned char *)nativeIv);
-    }
-  }
+	EVP_CIPHER_CTX_init(context);
+
+	cryptInit cryptInitFunc = getCryptInitFunc(forEncryption);
+
+	if (keyLength == 32) {
+		cryptInitFunc(context, EVP_aes_256_cbc(), NULL,
+				(unsigned char *) nativeKey, (unsigned char *) nativeIv);
+	} else if (keyLength == 16) {
+		cryptInitFunc(context, EVP_aes_128_cbc(), NULL,
+				(unsigned char *) nativeKey, (unsigned char *) nativeIv);
+	}
+
 }
 
 int opensslEncrypt(EVP_CIPHER_CTX* ctx, unsigned char* output, int* outLength, unsigned char* input, int inLength)
@@ -169,12 +160,7 @@ void reportError(JNIEnv* env, char* msg)
  * Method:    init
  */
 JNIEXPORT jlong JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngine_init
-(JNIEnv * env, jobject object, jint mode, jbyteArray key, jbyteArray iv,  jstring padding , jlong oldContext) {
-
-  if (oldContext != NULL) {
-    Java_com_intel_diceros_crypto_engines_AESMutliBufferEngine_cleanup(env, object, oldContext);
-  }
-
+(JNIEnv * env, jobject object, jboolean forEncryption, jbyteArray key, jbyteArray iv,  jint padding , jlong oldContext) {
   // Load libcrypto.so, if error, throw java exception
   if (!loadLibrary(HADOOP_CRYPTO_LIBRARY)) {
     throwDLError(env, HADOOP_CRYPTO_LIBRARY);
@@ -190,14 +176,12 @@ JNIEXPORT jlong JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngi
   // cleanup error
   cleanDLError();
 
+  if (oldContext != NULL) {
+    Java_com_intel_diceros_crypto_engines_AESMutliBufferEngine_cleanup(env, object, oldContext);
+  }
   // init overall struction, for memory allocation
   int keyLength = (*env)->GetArrayLength(env, key);
   int ivLength = (*env)->GetArrayLength(env, iv);
-
-  const char* cstr_padding = (*env)->GetStringUTFChars(env, padding, 0);
-  int pkcs5Padding = strncmp(cstr_padding,"PKCS5PADDING",12);
-
-  (*env)->ReleaseStringUTFChars(env, padding, cstr_padding);
 
   // localize key and iv
   jbyte nativeKey[32];
@@ -209,12 +193,12 @@ JNIEXPORT jlong JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngi
   CipherContext* ctx = initContext(handle, nativeKey, keyLength, nativeIv, ivLength);
 
   // init openssl context, by using localized key & iv
-  opensslResetContext(mode, ctx->opensslCtx, ctx->aesmbCtx);
+  opensslResetContext(forEncryption, ctx->opensslCtx, ctx->aesmbCtx);
 
-  if (pkcs5Padding == 0) {
-    EVP_CIPHER_CTX_set_padding(ctx, 1);
-  } else {
+  if (PADDING_NOPADDING == padding) {
     EVP_CIPHER_CTX_set_padding(ctx, 0);
+  } else if (PADDING_PKCS5PADDING == padding){
+    EVP_CIPHER_CTX_set_padding(ctx, 1);
   }
 
   return (long)ctx;
