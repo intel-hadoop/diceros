@@ -127,8 +127,24 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <argLine>-Djava.library.path=target/native/target/usr/local/lib/</argLine>
+                            <argLine>-Djava.library.path=target/native/target/usr/local/lib/:/usr/lib64/</argLine>
                         </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <configuration>
+                             <descriptor>src/assembly/bin.xml</descriptor>
+                             <finalName>${pom.artifactId}-${pom.version}</finalName>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

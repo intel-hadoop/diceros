@@ -1,0 +1,32 @@
+<assembly>
+    <formats>
+        <format>tar.gz</format>
+    </formats>
+
+    <fileSets>
+        <fileSet>
+            <includes>
+                <include>README*</include>
+                <include>LICENSE*</include>
+
+            </includes>
+        </fileSet>
+
+        <fileSet>
+            <directory>target/native/target/usr/local/lib/</directory>
+            <outputDirectory>/usr/local/lib/</outputDirectory>
+            <includes>
+                <include>lib*so*</include>
+            </includes>
+        </fileSet>
+
+        <fileSet>
+            <directory>target</directory>
+            <outputDirectory>.</outputDirectory>
+            <includes>
+                <include>*.jar</include>
+            </includes>
+        </fileSet>
+
+    </fileSets>
+</assembly>
