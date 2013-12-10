@@ -20,22 +20,22 @@ https://github.com/intel-hadoop/diceros/wiki/Quick-Start
 * <p>openssl-1.0.1c or above(just test openssl-1.0.1e);  </p> 
 * <p>yasm-1.2.0 </p>
 * <p>openjdk7;    </p>
-* <p>add "libdiceros.so" and "libaesmb.so" (which are generated after build) to the environment variable "java.library.path"; </p>
-* <p>add "diceros-1.0.0.jar"(which is generated after build) to the classpath; </p>
+* <p>add `libdiceros.so` and `libaesmb.so` (which are generated after build) to the environment variable `java.library.path`; </p>
+* <p>add `diceros-1.0.0.jar`(which is generated after build) to the classpath; </p>
 
 ### Build 
-mvn package
+`mvn package`
 
 ### Validate
-mvn test  
+`mvn test`
 
 ### Deploy
 #### Static deploy:   
-add line "security.provider.10=com.intel.diceros.provider.DicerosProvider" in file "\<java-home\>\lib\security\java.security"
+Add line `security.provider.10=com.intel.diceros.provider.DicerosProvider` in file `\<java-home\>\lib\security\java.security`
 
 #### Dynamic deploy:   
-add the following line "Security.addProvider(new com.intel.diceros.provider.DicerosProvider());"    
-before calling method "SecureRandom.getInstace()" or "Cipher.getInstance()".
+Add the following line `Security.addProvider(new com.intel.diceros.provider.DicerosProvider());`    
+before calling method `SecureRandom.getInstace()` or `Cipher.getInstance()`.
 
 ### Troubleshooting
 https://github.com/intel-hadoop/diceros/wiki/Troubleshooting
