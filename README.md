@@ -1,4 +1,4 @@
-project-diceros
+Diceros
 ===============
 
 Diceros is a sub-project of Rhino project which focus on providing a hardware accelerated JCE provider. Initial effort include:
