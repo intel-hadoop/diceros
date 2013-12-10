@@ -127,7 +127,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <argLine>-Djava.library.path=target/native/target/usr/local/lib/:/usr/local/openssl-1.0.1e/lib/</argLine>
+                            <argLine>-Djava.library.path=target/native/target/usr/local/lib/</argLine>
                         </configuration>
                     </plugin>
                 </plugins>
