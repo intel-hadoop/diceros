@@ -18,7 +18,7 @@
 
     <groupId>com.intel.diceros</groupId>
     <artifactId>diceros</artifactId>
-    <version>0.9.0</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <name>diceros</name>
