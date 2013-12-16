@@ -26,12 +26,9 @@
 #include "com_intel_diceros.h"
 #include "com_intel_diceros_crypto_engines_AESMutliBufferEngine.h"
 #include "aes_utils.h"
+#include "aes_common.h"
+#include "aes_multibuffer.h"
 
-typedef struct _CipherContext {
-  EVP_CIPHER_CTX* opensslCtx;
-  sAesContext* aesmbCtx;
-  int aesEnabled;
-} CipherContext;
 
 //-------- begin dlerror handling functions -----
 void traceDLError(const char* libname)
@@ -212,14 +209,19 @@ JNIEXPORT void JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngin
   jbyte * nativeKey = NULL;
   jbyte * nativeIv = NULL;
 
+
   // localize key
   if (NULL != key) {
-    nativeKey = (*env)->GetByteArrayElements(env, key, NULL);
-  } 
+    int keyLength = (*env)->GetArrayLength(env, key);
+    (*env)->GetByteArrayRegion(env, key, 0, keyLength, nativeKey);
+    //nativeKey = (*env)->GetByteArrayElements(env, key, NULL);
+  }
 
   // localize iv
   if (NULL != iv) {
-    nativeIv = (*env)->GetByteArrayElements(env, iv, NULL);
+    int ivLength = (*env)->GetArrayLength(env, iv);
+    (*env)->GetByteArrayRegion(env, iv, 0, ivLength, nativeIv);
+    //nativeIv = (*env)->GetByteArrayElements(env, iv, NULL);
   }
 
   // reinit openssl context by localized key&iv
@@ -250,106 +252,15 @@ JNIEXPORT void JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngin
  * Class:     com_intel_diceros_crypto_engines_AESMutliBufferEngine
  * Method:    doFinal
  */
-#define HEADER_LENGTH 2
-
 JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngine_bufferCrypt
 (JNIEnv * env, jobject object, jlong context, jobject inputDirectBuffer, jint start, jint inputLength, jobject outputDirectBuffer, jint begin, jboolean isUpdate) {
   unsigned char * input = (unsigned char *)(*env)->GetDirectBufferAddress(env, inputDirectBuffer) + start;
   unsigned char * output = (unsigned char *)(*env)->GetDirectBufferAddress(env, outputDirectBuffer) + begin;
 
   CipherContext* cipherContext = (CipherContext*) context;
-  EVP_CIPHER_CTX * ctx = (EVP_CIPHER_CTX *)cipherContext->opensslCtx;
-  sAesContext* aesCtx = (sAesContext*) cipherContext->aesmbCtx;
-  int aesEnabled = cipherContext->aesEnabled;
-  int aesmbApplied = 0; // 0 for not applied
-
-  int outLength = 0;
-  int outLengthFinal = 0;
-
-  unsigned char * header = NULL;
-  int extraOutputLength = 0;
-  if (ctx->encrypt == ENCRYPTION) {
-    header = output;
-    output = header + HEADER_LENGTH;
-    extraOutputLength = HEADER_LENGTH;
-  } else {
-    header = input;
-    input = header + HEADER_LENGTH;
-    inputLength -= HEADER_LENGTH;
-  }
-
-  if (ctx->encrypt == ENCRYPTION) {
-    if (aesEnabled) {
-      // try to apply multi-buffer optimization
-      int encrypted = aesmb_encrypt(aesCtx, input, inputLength, output, &outLength);
-      if (encrypted < 0) {
-        reportError(env, "AES multi-buffer encryption failed.");
-        return 0;
-      }
-      aesmbApplied = encrypted;
-      input += encrypted;
-      inputLength -=encrypted;
-      output +=outLength; // rest of data will use openssl to perform encryption
-    }
-
-    // encrypt with padding
-    EVP_CIPHER_CTX_set_padding(ctx, 1);
-    // encrypt the rest
-    opensslEncrypt(ctx, output, &outLengthFinal, input, inputLength);
-
-    if (aesmbApplied) {
-      header[0] = 1; // enabled
-      header[1] = outLengthFinal - inputLength; // padding
-    } else {
-      header[0] = 0;
-      header[1] = 0;
-    }
-  } else {
-    // read custom header
-    if (header[0]) {
-      int padding = (int)header[1] ;
-      if (aesEnabled) {
-        int decrypted = aesmb_decrypt(aesCtx, input, inputLength - padding, output, &outLengthFinal);
-        if (decrypted < 0) {
-          reportError(env, "Data can not be decrypted correctly");
-          return 0;
-        }
-        
-        input += outLengthFinal;
-        inputLength -= outLengthFinal;
-        output += outLengthFinal;
-        outLength += outLengthFinal;
-      } else {
-        int step = aesmb_streamlength(inputLength - padding) ;
-        outLength = 0;
-        int i;
-        for (i = 0 ; i < PARALLEL_LEVEL; i++) {
-          //reset open ssl context
-          EVP_CIPHER_CTX_cleanup(ctx);
-          opensslResetContextMB(ctx->encrypt, ctx, aesCtx,i);
-          //clear padding, since multi-buffer AES did not have padding
-          EVP_CIPHER_CTX_set_padding(ctx, 0);
-          //decrypt using open ssl
-          opensslDecrypt(ctx, output, &outLengthFinal, input, step);
-          
-          input += step;
-          inputLength -= step;
-          output += outLengthFinal;
-          outLength += outLengthFinal;
-        }
-      }
-    }
-
-    EVP_CIPHER_CTX_cleanup(ctx);
-    //reset open ssl context
-    opensslResetContext(ctx->encrypt, ctx, aesCtx);
-    //enable padding, the last buffer need padding
-    EVP_CIPHER_CTX_set_padding(ctx, 1);
-    //decrypt using open ssl
-    opensslDecrypt(ctx, output, &outLengthFinal, input, inputLength);
-  }
+  int encrypt_length = bufferCrypt(cipherContext, input, inputLength, output);
   Java_com_intel_diceros_crypto_engines_AESMutliBufferEngine_reset(env, object, context, NULL, NULL);
-  return outLength + outLengthFinal + extraOutputLength;
+  return encrypt_length;
 }
 
 JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngine_getBlockSize(
@@ -361,8 +272,8 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngin
     JNIEnv *env, jobject object, jlong context, jbyteArray in, jint inOff,
     jint inputLength, jbyteArray out, jint outOff) {
 
-  unsigned char * inputTmp = (unsigned char *) (*env)->GetByteArrayElements(env, in, inOff);
-  unsigned char * outputTmp = (unsigned char *) (*env)->GetByteArrayElements(env, out, outOff);
+  unsigned char * inputTmp = (unsigned char *) (*env)->GetByteArrayElements(env, in, 0);
+  unsigned char * outputTmp = (unsigned char *) (*env)->GetByteArrayElements(env, out, 0);
   unsigned char * input = inputTmp;
   unsigned char * output = outputTmp;
   CipherContext* cipherContext = (CipherContext*) context;
@@ -412,6 +323,7 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngin
       header[0] = 0;
       header[1] = 0;
     }
+    //logEnContext(inputTmp,aesCtx->iv,aesCtx->key,outputTmp);
     (*env)->ReleaseByteArrayElements(env, in, (jbyte *) inputTmp, 0);
     (*env)->ReleaseByteArrayElements(env, out, (jbyte *) outputTmp, 0);
   } else {
@@ -449,6 +361,8 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngin
         }
       }
     }
+    //logContext(input,iv, char *key,char *encry));
+    //logDeContext(inputTmp,aesCtx->iv,aesCtx->key,outputTmp);
 
     EVP_CIPHER_CTX_cleanup(ctx);
     //reset open ssl context
@@ -458,8 +372,8 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngin
     //decrypt using open ssl
     opensslDecrypt(ctx, output, &outLengthFinal, input, inputLength);
 
-    (*env)->ReleaseByteArrayElements(env, in, (jbyte *) inputTmp, 0);
-    (*env)->ReleaseByteArrayElements(env, out, (jbyte *) outputTmp, 0);
+    (*env)->ReleaseByteArrayElements(env, in, (jbyte *) inputTmp, JNI_COMMIT);
+    (*env)->ReleaseByteArrayElements(env, out, (jbyte *) outputTmp, JNI_COMMIT);
   }
 
   Java_com_intel_diceros_crypto_engines_AESMutliBufferEngine_reset(env, object, context, NULL, NULL);
@@ -470,4 +384,66 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngin
 JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngine_doFinal(
           JNIEnv *env, jobject object, jlong context, jbyteArray out, jint outOff) {
   return 0;
+}
+
+void logDeContext(char *input,char *iv, char *key,char *encry)
+{
+	FILE *fp;
+	fp=fopen("/ramcache/de.txt", "w+");
+    if(fp==NULL)
+       puts("File open error");
+    fputs("log ",fp);
+    fputc(':\n', fp);
+
+    fprintf(fp, "input \n");
+    printlog(fp,input,1,531);
+
+    fprintf(fp, "iv \n");
+    printlog(fp,iv,1,17);
+
+    fprintf(fp, "key \n");
+    printlog(fp,key,1,17);
+
+    fprintf(fp, "encry \n");
+    printlog(fp,encry,1,513);
+
+    if(fclose(fp)==0)
+      ;//printf("O.K\n");
+    else
+      puts("File close error\n");
+}
+
+void logEnContext(char *input,char *iv, char *key,char *encry)
+{
+	FILE *fp;
+	fp=fopen("/ramcache/en.txt", "w+");
+    if(fp==NULL)
+       puts("File open error");
+    fputs("log ",fp);
+    fputc(':\n', fp);
+
+    fprintf(fp, "input \n");
+    printlog(fp,input,1,513);
+
+    fprintf(fp, "iv \n");
+    printlog(fp,iv,1,17);
+
+    fprintf(fp, "key \n");
+    printlog(fp,key,1,17);
+
+    fprintf(fp, "encry \n");
+    printlog(fp,encry,1,531);
+
+    if(fclose(fp)==0)
+      ;//printf("O.K\n");
+    else
+      puts("File close error\n");
+}
+
+void printlog(FILE *fp,char *s,int size,int length){
+	int i=0;
+	for(i=0;i<length/size;i++){
+		fprintf(fp, "%d ", *(s+i*size));
+	}
+	fprintf(fp,"\n");
 }

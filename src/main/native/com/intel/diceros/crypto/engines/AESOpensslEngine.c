@@ -20,31 +20,10 @@
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #include "com_intel_diceros.h"
+#include "aes_common.h"
 #include "com_intel_diceros_crypto_engines_AESOpensslEngine.h"
 
-cryptInit getCryptInitFunc(jboolean forEncryption) {
-	if (forEncryption == JNI_TRUE) {
-		return EVP_EncryptInit_ex;
-	} else {
-		return EVP_DecryptInit_ex;
-	}
-}
 
-cryptUpdate getCryptUpdateFunc(jboolean forEncryption) {
-	if (forEncryption == JNI_TRUE) {
-		return EVP_EncryptUpdate;
-	} else {
-		return EVP_DecryptUpdate;
-	}
-}
-
-cryptFinal getCryptFinalFunc(jboolean forEncryption) {
-	if (forEncryption == JNI_TRUE) {
-		return EVP_EncryptFinal_ex;
-	} else {
-		return EVP_DecryptFinal_ex;
-	}
-}
 
 AESContext* preInitContext(JNIEnv *env, AESContext* aesCtx, jint mode, jbyteArray key, jbyteArray IV) {
 	if (aesCtx != NULL) {
