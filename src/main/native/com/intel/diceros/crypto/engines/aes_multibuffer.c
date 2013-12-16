@@ -1,8 +1,18 @@
 #include <openssl/evp.h>
 #include <openssl/err.h>
+#include <dlfcn.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "aes_multibuffer.h"
 #include "aes_utils.h"
 #include "aes_common.h"
+#include "config.h"
+
+void cleanDLError()
+{
+  dlerror();
+}
 
 int bufferCrypt(CipherContext* cipherContext, const char* input, int inputLength, char* output) {
   EVP_CIPHER_CTX * ctx = (EVP_CIPHER_CTX *)cipherContext->opensslCtx;
@@ -99,3 +109,123 @@ int bufferCrypt(CipherContext* cipherContext, const char* input, int inputLength
 
   return outLength + outLengthFinal + extraOutputLength;
 }
+
+void reset(CipherContext* cipherContext, uint8_t* nativeKey, uint8_t* nativeIv) {
+    sAesContext* aesCtx = cipherContext->aesmbCtx;
+    EVP_CIPHER_CTX * ctx = (EVP_CIPHER_CTX *)(cipherContext->opensslCtx);
+    // reinit openssl context by localized key&iv
+    aesmb_keyivinit(aesCtx, nativeKey, aesCtx->keyLength, (uint8_t*)nativeIv, aesCtx->ivLength);
+
+    EVP_CIPHER_CTX_cleanup(ctx);
+    opensslResetContext(ctx->encrypt, ctx, aesCtx);
+}
+
+long init(int forEncryption, signed char* nativeKey, int keyLength, signed char* nativeIv, int ivLength, int padding , long oldContext, int* loadLibraryResult) {
+  // Load libcrypto.so, if error, throw java exception
+  if (!loadLibrary(HADOOP_CRYPTO_LIBRARY)) {
+    *loadLibraryResult = -1;
+    return 0;
+  }
+
+  // load libaesmb.so, if error, print debug message
+  void* handle = loadLibrary(HADOOP_AESMB_LIBRARY);
+  if (NULL == handle) {
+    *loadLibraryResult = -2;
+  }
+
+  // cleanup error
+  cleanDLError();
+
+  if (oldContext != NULL) {
+    cleanup(oldContext);
+  }
+
+  // init all context
+  CipherContext* ctx = initContext(handle, nativeKey, keyLength, nativeIv, ivLength);
+  // init openssl context, by using localized key & iv
+  opensslResetContext(forEncryption, ctx->opensslCtx, ctx->aesmbCtx);
+  if (PADDING_NOPADDING == padding) {
+    EVP_CIPHER_CTX_set_padding(ctx->opensslCtx, 0);
+  } else if (PADDING_PKCS5PADDING == padding){
+    EVP_CIPHER_CTX_set_padding(ctx->opensslCtx, 1);
+  }
+  return (long)ctx;
+}
+
+void cleanup(long context) {
+  CipherContext * ctx = (CipherContext*)context;
+  destroyContext(ctx);
+}
+
+CipherContext* initContext(void* handle, signed char* key, int keylen, signed char* iv, int ivlen)
+{
+  CipherContext* ctx = (CipherContext*) malloc (sizeof(CipherContext));
+
+  // init openssl context
+  ctx->opensslCtx = (EVP_CIPHER_CTX*) malloc (sizeof(EVP_CIPHER_CTX));
+
+  // init iv and key
+  ctx->aesmbCtx = aesmb_ctxcreate(keylen, ivlen);
+  int result = aesmb_ctxinit(ctx->aesmbCtx, handle, (uint8_t*)key, keylen, (uint8_t*)iv, ivlen);
+
+  // cache AES-NI bit
+  ctx->aesEnabled = aesni_supported() && result == 0;
+
+  return ctx;
+}
+
+void opensslResetContext(int forEncryption, EVP_CIPHER_CTX* context, sAesContext* aesmbCtx)
+{
+  opensslResetContextMB(forEncryption, context, aesmbCtx, 0);
+}
+
+void opensslResetContextMB(int forEncryption, EVP_CIPHER_CTX* context,
+		sAesContext* aesmbCtx, int count) {
+	int keyLength = aesmbCtx->keyLength;
+	unsigned char* nativeKey = (unsigned char*) aesmbCtx->key;
+	unsigned char* nativeIv = (unsigned char*) aesmbCtx->iv + count * 16;
+
+	EVP_CIPHER_CTX_init(context);
+
+	cryptInit cryptInitFunc = getCryptInitFunc(forEncryption);
+
+	if (keyLength == 32) {
+		cryptInitFunc(context, EVP_aes_256_cbc(), NULL,
+				(unsigned char *) nativeKey, (unsigned char *) nativeIv);
+	} else if (keyLength == 16) {
+		cryptInitFunc(context, EVP_aes_128_cbc(), NULL,
+				(unsigned char *) nativeKey, (unsigned char *) nativeIv);
+	}
+
+}
+
+int opensslDecrypt(EVP_CIPHER_CTX* ctx, unsigned char* output, int* outLength, unsigned char* input, int inLength)
+{
+  int outLengthFinal;
+  *outLength = 0;
+
+  if(inLength && !EVP_DecryptUpdate(ctx, output, outLength, input, inLength)){
+    printf("ERROR in EVP_DecryptUpdate\n");
+    ERR_print_errors_fp(stderr);
+    return 0;
+  }
+
+  if(!EVP_DecryptFinal_ex(ctx, output + *outLength, &outLengthFinal)){
+    printf("ERROR in EVP_DecryptFinal_ex\n");
+    ERR_print_errors_fp(stderr);
+    return 0;
+  }
+
+  *outLength = *outLength + outLengthFinal;
+
+  return 1;
+}
+
+void destroyContext(CipherContext* ctx)
+{
+  aesmb_ctxdest(ctx->aesmbCtx);
+  EVP_CIPHER_CTX_cleanup(ctx->opensslCtx);
+  free(ctx->opensslCtx);
+  free(ctx);
+}
+

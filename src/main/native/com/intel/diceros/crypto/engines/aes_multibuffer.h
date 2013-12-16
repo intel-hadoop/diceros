@@ -29,6 +29,19 @@ typedef struct _CipherContext {
   int aesEnabled;
 } CipherContext;
 
+void cleanDLError();
+
 int bufferCrypt(CipherContext* cipherContext, const char* input, int inputLength, char* output);
+
+void reset(CipherContext* cipherContext, uint8_t* nativeKey, uint8_t* nativeIv);
+
+long init(int forEncryption, signed char* nativeKey, int keyLength, signed char* nativeIv, int ivLength, int padding , long oldContext, int* loadLibraryResult);
+
+CipherContext* initContext(void* handle, signed char* key, int keylen, signed char* iv, int ivlen);
+
+void opensslResetContext(int forEncryption, EVP_CIPHER_CTX* context, sAesContext* aesmbCtx);
+
+void opensslResetContextMB(int forEncryption, EVP_CIPHER_CTX* context,
+		sAesContext* aesmbCtx, int count);
 
 #endif

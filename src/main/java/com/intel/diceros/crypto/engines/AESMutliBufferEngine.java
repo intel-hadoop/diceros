@@ -108,8 +108,6 @@ public class AESMutliBufferEngine implements BlockCipher {
 
   protected native void reset(long context, byte[] key, byte[] iv);
 
-  protected native void cleanup(long context);
-
   private native int getBlockSize(long context);
 
   @Override
