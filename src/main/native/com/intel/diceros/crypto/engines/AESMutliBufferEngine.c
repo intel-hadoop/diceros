@@ -196,9 +196,9 @@ JNIEXPORT jlong JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngi
   opensslResetContext(forEncryption, ctx->opensslCtx, ctx->aesmbCtx);
 
   if (PADDING_NOPADDING == padding) {
-    EVP_CIPHER_CTX_set_padding(ctx, 0);
+    EVP_CIPHER_CTX_set_padding(ctx->opensslCtx, 0);
   } else if (PADDING_PKCS5PADDING == padding){
-    EVP_CIPHER_CTX_set_padding(ctx, 1);
+    EVP_CIPHER_CTX_set_padding(ctx->opensslCtx, 1);
   }
 
   return (long)ctx;
