@@ -167,8 +167,8 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngin
   CipherContext* cipherContext = (CipherContext*) context;
   int encrypt_length = bufferCrypt(cipherContext, input, inputLength, output);
 
-  (*env)->ReleaseByteArrayElements(env, in, (jbyte *) inputTmp, JNI_COMMIT);
-  (*env)->ReleaseByteArrayElements(env, out, (jbyte *) outputTmp, JNI_COMMIT);
+  (*env)->ReleaseByteArrayElements(env, in, (jbyte *) inputTmp, 0);
+  (*env)->ReleaseByteArrayElements(env, out, (jbyte *) outputTmp, 0);
 
   Java_com_intel_diceros_crypto_engines_AESMutliBufferEngine_reset(env, object, context, NULL, NULL);
   return encrypt_length;
