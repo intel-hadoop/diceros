@@ -285,7 +285,7 @@ int aesmb_ivinit(sAesContext* ctx, uint8_t* iv, int ivLength)
     memcpy(ctx->iv + i * ivLength, iv, ivLength);
     // generate seven different IVs
     for(j=0 ;j <16 ;j++){
-      *(iv+j) = *(iv+j) +1 ;
+      *(ctx->iv + i * ivLength + j) = *(ctx->iv + i * ivLength + j) +1;
     }
   }
 
