@@ -113,7 +113,7 @@ if (CRYPTO_LIBRARY AND CRYPTO_INCLUDE_DIR)
 				"${D}/com/intel/diceros/crypto/engines/AESOpensslEngine.c"
 				"${D}/com/intel/diceros/provider/securerandom/DrngSecureRandom.c"
 				"${D}/com/intel/diceros/provider/securerandom/rdrand-api.c"
-				"${D}/com/intel/diceros/crypto/engines/aes_common.c")
+				"${D}/com/intel/diceros/crypto/engines/aes_utils.c")
 else (CRYPTO_LIBRARY AND CRYPTO_INCLUDE_DIR)
     set(CRYPTO_INCLUDE_DIR "")
     set(DICEROS_SOURCE_FILES "")
@@ -150,7 +150,6 @@ if (CRYPTO_LIBRARY AND CRYPTO_INCLUDE_DIR AND AESMB_LIBRARY AND AESMB_INCLUDE_DI
 		GET_FILENAME_COMPONENT(HADOOP_AESMB_LIBRARY ${AESMB_LIBRARY} NAME)
     set(AESMB_SOURCE_FILES
         "${D}/com/intel/diceros/crypto/engines/AESMutliBufferEngine.c"
-				"${D}/com/intel/diceros/crypto/engines/aes_utils.c"
 				"${D}/com/intel/diceros/crypto/engines/aes_multibuffer.c")
 else (CRYPTO_LIBRARY AND CRYPTO_INCLUDE_DIR AND AESMB_LIBRARY AND AESMB_INCLUDE_DIR)
     set(AESMB_INCLUDE_DIR "")

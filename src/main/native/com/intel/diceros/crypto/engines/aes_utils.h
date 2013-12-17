@@ -21,6 +21,7 @@
 
 #include <stdlib.h>
 #include <aes_api.h>
+#include <openssl/evp.h>
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -30,6 +31,15 @@
 #endif
 
 #define PARALLEL_LEVEL 8
+
+#define ENCRYPTION 1
+#define DECRYPTION 0
+
+#define MODE_CTR 0
+#define MODE_CBC 1
+
+#define PADDING_NOPADDING 0
+#define PADDING_PKCS5PADDING 1
 
 typedef void (*EncryptX8)(sAesData_x8* data);
 typedef void (*DecryptX1)(sAesData* data);
@@ -56,5 +66,17 @@ void aesmb_ctxdest(sAesContext* ctx);
 int aesmb_keyivinit(sAesContext* ctx, uint8_t* key, int keyLength, uint8_t* iv, int ivLength);
 int aesmb_encrypt(sAesContext* ctx, uint8_t* input, int inputLength, uint8_t* output, int* outputLength);
 int aesmb_decrypt(sAesContext* ctx, uint8_t* input, int inputLength, uint8_t* output, int* outputLength);
+
+typedef int (*cryptInit)(EVP_CIPHER_CTX *, const EVP_CIPHER *, ENGINE *,
+		const unsigned char *, const unsigned char *);
+typedef int (*cryptUpdate)(EVP_CIPHER_CTX *, unsigned char *, int *,
+		const unsigned char *, int);
+typedef int (*cryptFinal)(EVP_CIPHER_CTX*, unsigned char *, int *);
+
+cryptInit getCryptInitFunc(int forEncryption);
+
+cryptUpdate getCryptUpdateFunc(int forEncryption);
+
+cryptFinal getCryptFinalFunc(int forEncryption);
 
 #endif

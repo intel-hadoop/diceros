@@ -20,7 +20,7 @@
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #include "com_intel_diceros.h"
-#include "aes_common.h"
+#include "aes_utils.h"
 #include "com_intel_diceros_crypto_engines_AESOpensslEngine.h"
 
 

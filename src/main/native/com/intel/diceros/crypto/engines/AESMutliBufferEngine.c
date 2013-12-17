@@ -25,7 +25,6 @@
 #include "com_intel_diceros.h"
 #include "com_intel_diceros_crypto_engines_AESMutliBufferEngine.h"
 #include "aes_utils.h"
-#include "aes_common.h"
 #include "aes_multibuffer.h"
 
 

@@ -8,7 +8,23 @@
             <includes>
                 <include>README*</include>
                 <include>LICENSE*</include>
+            </includes>
+        </fileSet>
 
+        <fileSet>
+            <directory>src/main/native/com/intel/diceros/crypto/engines/</directory>
+            <outputDirectory>/include/</outputDirectory>
+            <includes>
+                <include>aes_multibuffer.h</include>
+                <include>aes_utils.h</include>
+            </includes>
+        </fileSet>
+
+        <fileSet>
+            <directory>src/main/native/aesmb/</directory>
+            <outputDirectory>/include/</outputDirectory>
+            <includes>
+                <include>aes_api.h</include>
             </includes>
         </fileSet>
 
