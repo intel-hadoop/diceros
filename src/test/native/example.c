@@ -35,36 +35,43 @@ int main() {
 
 	int inputLength = 16 * 3 * 3;
 
-	char * out = malloc(inputLength + 18 * sizeof(char));
-	char * de = malloc(inputLength * sizeof(char));
+	char * enc = malloc((inputLength + 18) * sizeof(char));
+	char * dec = malloc((inputLength + 18) * sizeof(char));
 
 	long context = 0;
 
 	int enc_len = 0;
 	int dec_len = 0;
 
-	int j;
+	int i,j;
 	int result = 0;
 	for (j = 0; j < 1; j++) {
 		context = init(1, key, 16, iv, 16, 1, context, &result);
-		enc_len = bufferCrypt((CipherContext*) context, in, inputLength, out);
-		context = init(0, key, 16, iv, 16, 1, context, &result);
-		dec_len = bufferCrypt((CipherContext*) context, out, enc_len, de);
+		enc_len = bufferCrypt((CipherContext*) context, in, inputLength, enc);
 
+		context = init(0, key, 16, iv, 16, 1, context, &result);
+		dec_len = bufferCrypt((CipherContext*) context, enc, enc_len, dec);
 	}
+	cleanup(context);
 	printf("enc_len: %d\n", enc_len);
 	printf("dec_len: %d\n", dec_len);
-	int i;
+
 	printf("\noriginal:\t");
 	for (i = 0; i < inputLength; i++)
 		printf("%c", *(in + i));
 	printf("\n\nencrypted:\t");
 	for (i = 0; i < enc_len; i++)
-		printf("%c ", *(out + i));
+		printf("%x ", *(enc + i));
 	printf("\n\ndecrypted:\t");
 	for (i = 0; i < dec_len; i++)
-		printf("%c", *(de + i));
+		printf("%c", *(dec + i));
+
 	printf("\n");
+	printf("\n");
+	printf("\n");
+
+	free(enc);
+	free(dec);
 
 	return 0;
 }

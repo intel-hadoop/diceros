@@ -31,6 +31,8 @@ typedef struct _CipherContext {
 
 void cleanDLError();
 
+void cleanup(long context);
+
 int bufferCrypt(CipherContext* cipherContext, const char* input, int inputLength, char* output);
 
 void reset(CipherContext* cipherContext, uint8_t* nativeKey, uint8_t* nativeIv);
