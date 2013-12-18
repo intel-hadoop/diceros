@@ -226,7 +226,6 @@ aesmb_keyexp(sAesContext* ctx)
     return -2;
   }
   keySchedFunc(ctx->key, ctx->encryptKeysched);
-  //logContext(ctx->encryptKeysched);
   // init decryption key expension
   keySchedFunc = keyexp(handle, ctx->keyLength, 0);
   if (NULL == keySchedFunc) {
@@ -438,27 +437,6 @@ aesmb_decrypt(sAesContext* ctx,
   return *outputLength;
 }
 
-
-void logContext(char *key)
-{
-	FILE *fp;
-	fp=fopen("/ramcache/keycache.txt", "w+");
-    if(fp==NULL)
-       puts("File open error");
-    fputs("log ",fp);
-    fputc(':\n', fp);
-
-    //fprintf(fp, "input \n");
-    //printlog(fp,input,1,513);
-
-    fprintf(fp, "keycache \n");
-    printlog(fp,key,1,241);
-
-    if(fclose(fp)==0)
-      ;//printf("O.K\n");
-    else
-      puts("File close error\n");
-}
 
 cryptInit getCryptInitFunc(int forEncryption) {
 	if (forEncryption == 1) {
