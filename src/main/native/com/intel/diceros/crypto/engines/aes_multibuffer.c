@@ -99,7 +99,6 @@ int bufferCrypt(CipherContext* cipherContext, const char* input, int inputLength
         int i;
         for (i = 0 ; i < PARALLEL_LEVEL; i++) {
           //reset open ssl context
-          EVP_CIPHER_CTX_cleanup(ctx);
           opensslResetContextMB(ctx->encrypt, ctx, aesCtx,i);
           //clear padding, since multi-buffer AES did not have padding
           EVP_CIPHER_CTX_set_padding(ctx, 0);
@@ -114,7 +113,6 @@ int bufferCrypt(CipherContext* cipherContext, const char* input, int inputLength
       }
     }
 
-    EVP_CIPHER_CTX_cleanup(ctx);
     //reset open ssl context
     opensslResetContext(ctx->encrypt, ctx, aesCtx);
     //enable padding, the last buffer need padding
@@ -132,7 +130,6 @@ void reset(CipherContext* cipherContext, uint8_t* nativeKey, uint8_t* nativeIv) 
     // reinit openssl context by localized key&iv
     aesmb_keyivinit(aesCtx, nativeKey, aesCtx->keyLength, (uint8_t*)nativeIv, aesCtx->ivLength);
 
-    EVP_CIPHER_CTX_cleanup(ctx);
     opensslResetContext(ctx->encrypt, ctx, aesCtx);
 }
 
@@ -159,6 +156,7 @@ long init(int forEncryption, signed char* nativeKey, int keyLength, signed char*
   // init all context
   CipherContext* ctx = initContext(handle, nativeKey, keyLength, nativeIv, ivLength);
   // init openssl context, by using localized key & iv
+  EVP_CIPHER_CTX_init(ctx->opensslCtx);
   opensslResetContext(forEncryption, ctx->opensslCtx, ctx->aesmbCtx);
   if (PADDING_NOPADDING == padding) {
     EVP_CIPHER_CTX_set_padding(ctx->opensslCtx, 0);
@@ -200,8 +198,6 @@ void opensslResetContextMB(int forEncryption, EVP_CIPHER_CTX* context,
 	int keyLength = aesmbCtx->keyLength;
 	unsigned char* nativeKey = (unsigned char*) aesmbCtx->key;
 	unsigned char* nativeIv = (unsigned char*) aesmbCtx->iv + count * 16;
-
-	EVP_CIPHER_CTX_init(context);
 
 	cryptInit cryptInitFunc = getCryptInitFunc(forEncryption);
 
