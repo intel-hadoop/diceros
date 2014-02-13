@@ -50,7 +50,7 @@
                 <crypto.prefix></crypto.prefix>
                 <crypto.lib></crypto.lib>
                 <crypto.include></crypto.include>
-                <yasm.prefix>/usr/local/bin/</yasm.prefix>
+                <yasm.prefix></yasm.prefix>
                 <require.crypto>true</require.crypto>
                 <aesmb.prefix></aesmb.prefix>
                 <aesmb.lib></aesmb.lib>
