@@ -111,6 +111,11 @@ public class AESMutliBufferEngine implements BlockCipher {
   private native int getBlockSize(long context);
 
   @Override
+  public byte[] getIV() {
+    return IV;
+  }
+
+  @Override
   public void setIV(byte[] IV) {
     this.IV = IV;
   }

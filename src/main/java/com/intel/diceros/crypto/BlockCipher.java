@@ -52,6 +52,13 @@ public interface BlockCipher {
   public int getBlockSize();
 
   /**
+   * Get the initialization vector (IV) for the cipher.
+   *
+   * @return the IV initialization vector for the cipher
+   */
+  public byte[] getIV();
+
+  /**
    * Set the initialization vector (IV) for the cipher.
    *
    * @param IV initialization vector for the cipher

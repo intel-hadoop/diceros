@@ -24,6 +24,7 @@ import com.intel.diceros.crypto.InvalidCipherTextException;
 import com.intel.diceros.crypto.OutputLengthException;
 import com.intel.diceros.crypto.modes.CBCBlockCipher;
 import com.intel.diceros.crypto.modes.CTRBlockCipher;
+import com.intel.diceros.crypto.modes.CTSBlockCipher;
 import com.intel.diceros.crypto.params.CipherParameters;
 import com.intel.diceros.crypto.params.KeyParameter;
 import com.intel.diceros.crypto.params.ParametersWithIV;
@@ -83,6 +84,9 @@ public abstract class BaseBlockCipher extends CipherSpi {
     } else if (modeName == Constants.MODE_CBC) {
       cipher = new GenericBlockCipherImpl(new CBCBlockCipher(baseEngine));
       ivLength = baseEngine.getBlockSize();
+    } else if (modeName == Constants.MODE_CTS) {
+      cipher = new GenericBlockCipherImpl(new CTSBlockCipher(baseEngine));
+      ivLength = baseEngine.getBlockSize();
     }
   }
 
@@ -133,8 +137,9 @@ public abstract class BaseBlockCipher extends CipherSpi {
   @Override
   protected void engineSetMode(String mode) throws NoSuchAlgorithmException {
     String modeName = mode.toUpperCase(Locale.ENGLISH);
-
-    if (!modeName.startsWith("CTR") || !modeName.startsWith("CBC")) {
+    if (!modeName.startsWith("CTR") && 
+	!modeName.startsWith("CBC") &&
+	!modeName.startsWith("CTS")) {
       throw new NoSuchAlgorithmException("can't support mode " + mode);
     }
   }
@@ -142,7 +147,6 @@ public abstract class BaseBlockCipher extends CipherSpi {
   @Override
   protected void engineSetPadding(String padding) throws NoSuchPaddingException {
     String paddingName = padding.toUpperCase(Locale.ENGLISH);
-
     if (paddingName.equals("NOPADDING") || paddingName.equals("PKCS5PADDING")) {
       cipher = new GenericBlockCipherImpl(cipher.getUnderlyingCipher());
       cipher.setPadding(paddingName);
