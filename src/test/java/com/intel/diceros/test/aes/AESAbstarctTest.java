@@ -105,40 +105,40 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
     bOut = new ByteArrayOutputStream();
     cOut = new CipherOutputStream(bOut, out);
     try {
-      for (int i = 0; i != input.length / 2; i++) {
-        cOut.write(input[i]);
-      }
-      cOut.write(input, input.length / 2, input.length - input.length / 2);
+      cOut.write(input);
       cOut.close();
+      cOut = null;
     } catch (IOException e) {
       fail("AES failed encryption - " + e.toString(), e);
+    } finally {
+      if (cOut != null) cOut.close();
     }
 
-    byte[] bytes;
-
-    bytes = bOut.toByteArray();
+    byte[] bytes = bOut.toByteArray();
 
     //
     // decryption pass
     //
     bIn = new ByteArrayInputStream(bytes);
     cIn = new CipherInputStream(bIn, in);
+    DataInputStream dIn = new DataInputStream(cIn);
     byte[] decBytes = null;
     try {
-      DataInputStream dIn = new DataInputStream(cIn);
       decBytes = new byte[input.length];
-      for (int i = 0; i != input.length / 2; i++) {
-        decBytes[i] = (byte) dIn.read();
-      }
-      dIn.readFully(decBytes, input.length / 2, decBytes.length - input.length
-              / 2);
+      dIn.readFully(decBytes);
+      dIn.close();
+      dIn = null;
     } catch (Exception e) {
       fail("AES failed encryption - " + e.toString(), e);
+    } finally {
+      if (dIn != null) dIn.close();
     }
 
-    if (!Arrays.areEqual(decBytes, input)) {
-      fail("AES failed decryption - expected " + new String(Hex.encode(input))
-              + " got " + new String(Hex.encode(bytes)));
+    for (int i = 0; i < input.length; i++) {
+      if (decBytes[i] != input[i]) {
+        fail(String.format("AES failed decryption at position %d," +
+          " expected %02x got %02x", i, input[i], decBytes[i]));
+      }
     }
   }
 
@@ -195,14 +195,15 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
     input.flip();
     decResult.flip();
 
-    if (!input.equals(decResult)) {
-      byte[] inArray = new byte[input.remaining()];
-      byte[] decResultArray = new byte[decResult.remaining()];
-      input.get(inArray);
-      decResult.get(decResultArray);
-      fail("AES failed decryption - expected "
-              + new String(Hex.encode(inArray)) + " got "
-              + new String(Hex.encode(decResultArray)));
+    byte[] inArray = new byte[input.remaining()];
+    byte[] decResultArray = new byte[decResult.remaining()];
+    input.get(inArray);
+    decResult.get(decResultArray);
+    for (int i = 0; i < inArray.length; i++) {
+      if (decResultArray[i] != inArray[i]) {
+        fail(String.format("AES failed decryption at position %d," +
+          " expected %02x got %02x", i, inArray[i], decResultArray[i]));
+      }
     }
   }
 
@@ -269,14 +270,16 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
     totalInput.put(inputByteBuffer);
     totalInput.flip();
     //inputByteBuffer.flip();
-    if (!totalInput.equals(decResult)) {
-      byte[] inArray = new byte[totalInput.remaining()];
-      byte[] decResultArray = new byte[decResult.remaining()];
-      totalInput.get(inArray);
-      decResult.get(decResultArray);
-      fail("AES failed decryption - expected "
-              + new String(Hex.encode(inArray)) + " got "
-              + new String(Hex.encode(decResultArray)));
+
+    byte[] inArray = new byte[totalInput.remaining()];
+    byte[] decResultArray = new byte[decResult.remaining()];
+    totalInput.get(inArray);
+    decResult.get(decResultArray);
+    for (int i = 0; i < inArray.length; i++) {
+      if (decResultArray[i] != inArray[i]) {
+        fail(String.format("AES failed decryption at position %d," +
+          " expected %02x got %02x", i, inArray[i], decResultArray[i]));
+      }
     }
   }
 

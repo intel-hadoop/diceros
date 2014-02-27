@@ -109,6 +109,11 @@ public class AESOpensslEngine implements BlockCipher {
   private native int doFinal(long context, byte[] out, int outOff);
 
   @Override
+  public byte[] getIV() {
+    return IV;
+  }
+
+  @Override
   public void setIV(byte[] IV) {
     this.IV = IV;
   }

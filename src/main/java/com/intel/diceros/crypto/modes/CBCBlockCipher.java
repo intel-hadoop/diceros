@@ -152,6 +152,11 @@ public class CBCBlockCipher implements BlockCipher {
   }
 
   @Override
+  public byte[] getIV() {
+    return IV;
+  }
+
+  @Override
   public void setIV(byte[] IV) {
     this.IV = IV;
     cipher.setIV(this.IV);

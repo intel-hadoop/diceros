@@ -247,8 +247,9 @@ public class AESPerfTest extends BaseBlockCipherTest {
     System.out.println("Init test data complete.");
 
     String[] providers = {"SunJCE", "DC"};
-    String[] sunJCEModes = {"AES/CTR/NoPadding", "AES/CBC/NoPadding", "AES/CBC/PKCS5Padding"};
-    String[] DCModes = {"AES/CTR/NoPadding", "AES/CBC/NoPadding", "AES/CBC/PKCS5Padding", "AES/MBCBC/PKCS5Padding"};
+    String[] sunJCEModes = {"AES/CTR/NoPadding", "AES/CBC/NoPadding", "AES/CBC/PKCS5Padding", "AES/CTS/NoPadding"};
+    String[] DCModes = {"AES/CTR/NoPadding", "AES/CBC/NoPadding", "AES/CBC/PKCS5Padding", "AES/CTS/NoPadding",
+      "AES/MBCBC/PKCS5Padding"};
 
     Map<String, String[]> modesMap = new HashMap<String, String[]>(2);
     modesMap.put("SunJCE", sunJCEModes);
