@@ -91,7 +91,7 @@ public class AESMutliBufferEngine implements BlockCipher {
     if (isUpdate) {
       throw new UnsupportedOperationException("Mutli Buffer don't support the update method.");
     }
-    return bufferCrypt(context, input, input.position(), input.limit(), output,
+    return bufferCrypt(context, input, input.position(), input.limit()-input.position(), output,
             output.position(), isUpdate);
   }
 
