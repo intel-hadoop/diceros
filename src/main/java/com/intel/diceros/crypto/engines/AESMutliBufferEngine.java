@@ -72,13 +72,13 @@ public class AESMutliBufferEngine implements BlockCipher {
 
   @Override
   public int processBlock(byte[] in, int inOff, int inLen, byte[] out,
-                          int outOff) throws DataLengthException, IllegalStateException {
-    return doFinalArray(context, in, inOff, inLen, out, outOff);
+      int outOff) throws DataLengthException, IllegalStateException {
+    return processBlock(context, in, inOff, inLen, out, outOff);
   }
 
   @Override
   public int doFinal(byte[] out, int outOff) {
-    return doFinal(context, out, outOff);
+    return 0;
   }
 
   @Override
@@ -95,21 +95,13 @@ public class AESMutliBufferEngine implements BlockCipher {
             output.position(), isUpdate);
   }
 
-
   private native int bufferCrypt(long context, ByteBuffer inputDirectBuffer, int start,
-                                 int inputLength, ByteBuffer outputDirectBuffer, int begin, boolean isUpdate);
+      int inputLength, ByteBuffer outputDirectBuffer, int begin, boolean isUpdate);
 
   protected native long init(boolean forEncryption, byte[] key, byte[] iv, int padding, long oldContext);
 
-  private native int doFinal(long context, byte[] out, int outOff);
-
-  private native int doFinalArray(long context, byte[] in, int inOff,
-                                  int inLen, byte[] out, int outOff);
-
-  protected native void reset(long context, byte[] key, byte[] iv);
-
-  private native int getBlockSize(long context);
-
+  private native int processBlock(long context, byte[] in, int inOff, int inLen, byte[] out, int outOff);
+  
   @Override
   public void setIV(byte[] IV) {
     this.IV = IV;

@@ -21,6 +21,7 @@ package com.intel.diceros.test.aes;
 import com.intel.diceros.provider.DicerosProvider;
 import com.intel.diceros.provider.util.Arrays;
 import com.intel.diceros.test.BaseBlockCipherTest;
+import com.intel.diceros.test.util.Entity;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;

@@ -34,26 +34,14 @@
 #define UNIX
 #endif
 
-typedef struct {
-	EVP_CIPHER_CTX* context;
-	jbyte* nativeKey;
-	long keyLength;
-	jbyte* nativeIv;
-	long ivLength;
-} AESContext;
-
-
-
-AESContext* preInitContext(JNIEnv *env, AESContext* aesCtx, jint mode, jbyteArray key, jbyteArray IV);
-
 /* A helper macro to 'throw' a java exception. */
 #define THROW(env, exception_name, message) \
   { \
-	jclass ecls = (*env)->FindClass(env, exception_name); \
-	if (ecls) { \
-	  (*env)->ThrowNew(env, ecls, message); \
-	  (*env)->DeleteLocalRef(env, ecls); \
-	} \
+  jclass ecls = (*env)->FindClass(env, exception_name); \
+  if (ecls) { \
+    (*env)->ThrowNew(env, ecls, message); \
+    (*env)->DeleteLocalRef(env, ecls); \
+  } \
   }
 
 /* Helper macro to return if an exception is pending */
@@ -92,14 +80,14 @@ AESContext* preInitContext(JNIEnv *env, AESContext* aesCtx, jint mode, jbyteArra
 static __attribute__ ((unused))
 void *do_dlsym(JNIEnv *env, void *handle, const char *symbol) {
   if (!env || !handle || !symbol) {
-  	THROW(env, "java/lang/InternalError", NULL);
-  	return NULL;
+    THROW(env, "java/lang/InternalError", NULL);
+    return NULL;
   }
   char *error = NULL;
   void *func_ptr = dlsym(handle, symbol);
   if ((error = dlerror()) != NULL) {
-  	THROW(env, "java/lang/UnsatisfiedLinkError", symbol);
-  	return NULL;
+    THROW(env, "java/lang/UnsatisfiedLinkError", symbol);
+    return NULL;
   }
   return func_ptr;
 }

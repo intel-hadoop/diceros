@@ -50,12 +50,16 @@ public class AESOpensslEngine implements BlockCipher {
 
   @Override
   public void init(boolean forEncryption, CipherParameters params)
-          throws IllegalArgumentException {
+      throws IllegalArgumentException {
+    if (params == null) {
+      params = this.params;
+    }
+    
     if (params instanceof KeyParameter) {
       this.forEncryption = forEncryption;
       this.params = params;
       aesContext = initWorkingKey(((KeyParameter) params).getKey(), forEncryption,
-              mode, padding, IV, aesContext);
+          mode, padding, IV, aesContext);
     } else {
       throw new IllegalArgumentException(
               "invalid parameter passed to AES init - "
@@ -75,7 +79,7 @@ public class AESOpensslEngine implements BlockCipher {
 
   @Override
   public int processBlock(byte[] in, int inOff, int inLen, byte[] out,
-                          int outOff) throws DataLengthException, IllegalStateException {
+      int outOff) throws DataLengthException, IllegalStateException {
     return processBlock(aesContext, in, inOff, inLen, out, outOff);
   }
 
@@ -86,25 +90,25 @@ public class AESOpensslEngine implements BlockCipher {
 
   @Override
   public void reset() {
-  	if (this.mode != Constants.MODE_CTR) {
-  		init(forEncryption, params);
-  	}
+    if (this.mode != Constants.MODE_CTR) {
+      init(forEncryption, params);
+    }
   }
 
   @Override
   public int bufferCrypt(ByteBuffer input, ByteBuffer output, boolean isUpdate) {
     return bufferCrypt(aesContext, input, input.position(), input.limit(), output,
-            output.position(), isUpdate);
+        output.position(), isUpdate);
   }
 
   private native int bufferCrypt(long context, ByteBuffer input, int inputPos,
-                                 int inputLimit, ByteBuffer output, int outputPos, boolean isUpdate);
+      int inputLimit, ByteBuffer output, int outputPos, boolean isUpdate);
 
   private native long initWorkingKey(byte[] key, boolean forEncryption,
-                                     int mode, int padding, byte[] IV, long aesContext);
+      int mode, int padding, byte[] IV, long aesContext);
 
   private native int processBlock(long context, byte[] in, int inOff,
-                                  int inLen, byte[] out, int outOff);
+      int inLen, byte[] out, int outOff);
 
   private native int doFinal(long context, byte[] out, int outOff);
 

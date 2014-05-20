@@ -1,9 +1,9 @@
-package com.intel.diceros.test.aes;
+package com.intel.diceros.test.util;
 
 import java.io.Serializable;
-import java.nio.ByteBuffer;
 
 public class Entity implements Serializable {
+  private static final long serialVersionUID = 3137121557455526879L;
 
   public Entity(byte[] input, byte[] key, byte[] iv ,byte[] decontent,byte[] encontent  ){
     this.input = input;

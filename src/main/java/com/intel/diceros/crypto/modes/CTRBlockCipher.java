@@ -57,7 +57,7 @@ public class CTRBlockCipher implements BlockCipher {
 
   @Override
   public void init(boolean forEncryption, CipherParameters params)
-          throws IllegalArgumentException {
+      throws IllegalArgumentException {
     if (params instanceof ParametersWithIV) {
       ParametersWithIV ivParam = (ParametersWithIV) params;
       byte[] iv = ivParam.getIV();

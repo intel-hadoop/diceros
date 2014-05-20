@@ -29,5 +29,4 @@ public abstract class BaseBlockCipherTest extends SimpleTest {
   public String getName() {
     return algorithm;
   }
-
 }

@@ -19,10 +19,10 @@
 package com.intel.diceros.test.aes;
 
 import com.intel.diceros.provider.DicerosProvider;
-import com.intel.diceros.provider.util.Arrays;
 import com.intel.diceros.test.util.Hex;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.security.Key;
@@ -39,56 +39,45 @@ public class AESCBCMBTest extends AESAbstarctTest {
   }
 
   @Override
-  protected void byteArrayTest(byte[] keyBytes, byte[] input) throws Exception {
-    Key key;
-    Cipher in, out;
-
-    key = new SecretKeySpec(keyBytes, "AES");
-
-    in = Cipher.getInstance(this.cipherName, this.providerName);
-    out = Cipher.getInstance(this.cipherName, this.providerName);
+  protected void byteArrayTest(byte[] keyBytes, byte[] ivBytes, byte[] input)
+      throws Exception {
+    Key key = new SecretKeySpec(keyBytes, "AES");
+    IvParameterSpec iv = new IvParameterSpec(ivBytes);
+    Cipher dec = Cipher.getInstance(this.cipherName, this.providerName);
+    Cipher enc = Cipher.getInstance(this.cipherName, this.providerName);
 
     try {
-      out.init(Cipher.ENCRYPT_MODE, key);
+      enc.init(Cipher.ENCRYPT_MODE, key, iv);
+      dec.init(Cipher.DECRYPT_MODE, key, iv);
     } catch (Exception e) {
       fail("AES failed initialisation - " + e.toString(), e);
     }
 
-    try {
-      in.init(Cipher.DECRYPT_MODE, key, new javax.crypto.spec.IvParameterSpec(
-              out.getIV()));
-    } catch (Exception e) {
-      fail("AES failed initialisation - " + e.toString(), e);
-    }
-
-    //
     // encryption pass
-    //
-    byte[] encrytion = new byte[input.length + 16 + 2];
-    out.doFinal(input, 0, input.length, encrytion, 0);
-    if (encrytion.length != input.length + 16 + 2) {
-      fail("AES failed encryption - ");
+    byte[] encResult = new byte[input.length + 16 + 2];
+    int encLen = enc.doFinal(input, 0, input.length, encResult, 0);
+    if (encResult.length != encLen) {
+      fail("AES failed encryption");
     }
 
-    byte[] decrytion = in.doFinal(encrytion, 0, encrytion.length);
-
-    if (!Arrays.areEqual(decrytion, input)) {
-      fail("AES failed decryption");
-    }
+    // decryption pass
+    byte[] decrytion = dec.doFinal(encResult, 0, encResult.length);
+    checkEqual(decrytion, input);
   }
 
   @Override
   public void performTest() throws Exception {
-    for (int i = 0; i != cipherTests.length; i += 2) {
-      byteArrayTest(Hex.decode(cipherTests[i]), cipherTests[i + 1].getBytes());
+    for (int i = 0; i != cipherTests.length; i += 3) {
+      byteArrayTest(Hex.decode(cipherTests[i]), Hex.decode(cipherTests[i + 1].getBytes()),
+          cipherTests[i + 2].getBytes());
     }
 
-    for (int i = 0; i != cipherTests.length; i += 2) {
-      byte[] inputBytes = cipherTests[i + 1].getBytes();
+    for (int i = 0; i != cipherTests.length; i += 3) {
+      byte[] inputBytes = cipherTests[i + 2].getBytes();
       ByteBuffer inputBuffer = ByteBuffer.allocateDirect(inputBytes.length);
       inputBuffer.put(inputBytes);
       inputBuffer.flip();
-      byteBufferTest(Hex.decode(cipherTests[i]), inputBuffer);
+      byteBufferTest(Hex.decode(cipherTests[i]), Hex.decode(cipherTests[i+1]), inputBuffer);
     }
   }
 
@@ -98,7 +87,6 @@ public class AESCBCMBTest extends AESAbstarctTest {
   }
   
   public static void main(String[] args) {
-  	new AESCBCMBTest().testAESCBCMB();
+    new AESCBCMBTest().testAESCBCMB();
   }
-
 }

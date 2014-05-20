@@ -43,17 +43,13 @@ import java.util.Locale;
 public abstract class BaseBlockCipher extends CipherSpi {
 
   @SuppressWarnings("rawtypes")
-  private Class[] availableSpecs = {IvParameterSpec.class,};
+  private Class[] availableSpecs = {IvParameterSpec.class};
 
-  private BlockCipher baseEngine; // the underlying cipher engine, do the actual
-  // encryption and decryption work
-  private GenericBlockCipher cipher; // wrapping baseEngine, do some pre
-  // processing work
-  private ParametersWithIV ivParam; // parameter of key data, initialization
-  // vector, etc
+  private BlockCipher baseEngine; // the underlying cipher engine, do the actual encryption and decryption work
+  private GenericBlockCipher cipher; // wrapping baseEngine, do some preprocessing work
+  private ParametersWithIV ivParam; // parameter of key data, initialization vector, etc
   private int ivLength = 0; // the initialization vector length
   protected AlgorithmParameters engineParams = null;
-  //private String modeName = null;
 
   /**
    * Constructor
@@ -74,16 +70,17 @@ public abstract class BaseBlockCipher extends CipherSpi {
    */
   protected BaseBlockCipher(BlockCipherProvider provider) {
     baseEngine = provider.get();
-    cipher = new GenericBlockCipherImpl(baseEngine);
 
     int modeName = baseEngine.getMode();
     if (modeName == Constants.MODE_CTR) {
       cipher = new GenericBlockCipherImpl(new CTRBlockCipher(baseEngine));
-      ivLength = baseEngine.getBlockSize();
     } else if (modeName == Constants.MODE_CBC) {
       cipher = new GenericBlockCipherImpl(new CBCBlockCipher(baseEngine));
-      ivLength = baseEngine.getBlockSize();
+    } else {
+      cipher = new GenericBlockCipherImpl(baseEngine);
     }
+    
+    ivLength = baseEngine.getBlockSize();
   }
 
   @Override
@@ -153,31 +150,25 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
   @Override
   protected void engineInit(int opmode, Key key, AlgorithmParameterSpec params,
-                            SecureRandom random) throws InvalidKeyException,
-          InvalidAlgorithmParameterException {
+      SecureRandom random) throws InvalidKeyException, InvalidAlgorithmParameterException {
     CipherParameters param;
-
     this.engineParams = null;
-
     // basic key check
     if (!(key instanceof SecretKey)) {
       throw new InvalidKeyException("Key for algorithm " + key.getAlgorithm()
               + " not suitable for symmetric enryption.");
     }
 
-    // a note on iv's - if ivLength is zero the IV gets ignored (we don't use
-    // it).
+    // a note on iv's - if ivLength is zero the IV gets ignored (we don't use it).
     if (params == null) {
       param = new KeyParameter(key.getEncoded());
     } else if (params instanceof IvParameterSpec) {
       if (ivLength != 0) {
         IvParameterSpec p = (IvParameterSpec) params;
-
         if (p.getIV().length != ivLength) {
           throw new InvalidAlgorithmParameterException("IV must be " + ivLength
                   + " bytes long.");
         }
-
         param = new ParametersWithIV(new KeyParameter(key.getEncoded()),
                 p.getIV());
         ivParam = (ParametersWithIV) param;
@@ -190,7 +181,6 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
     if ((ivLength != 0) && !(param instanceof ParametersWithIV)) {
       SecureRandom ivRandom = random;
-
       if (ivRandom == null) {
         try {
           ivRandom = SecureRandom.getInstance("DRNG",
@@ -202,7 +192,6 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
       if ((opmode == Cipher.ENCRYPT_MODE) || (opmode == Cipher.WRAP_MODE)) {
         byte[] iv = new byte[ivLength];
-
         ivRandom.nextBytes(iv);
         param = new ParametersWithIV(param, iv);
         ivParam = (ParametersWithIV) param;
@@ -234,10 +223,8 @@ public abstract class BaseBlockCipher extends CipherSpi {
   @SuppressWarnings("unchecked")
   @Override
   protected void engineInit(int opmode, Key key, AlgorithmParameters params,
-                            SecureRandom random) throws InvalidKeyException,
-          InvalidAlgorithmParameterException {
+      SecureRandom random) throws InvalidKeyException, InvalidAlgorithmParameterException {
     AlgorithmParameterSpec paramSpec = null;
-
     if (params != null) {
       for (int i = 0; i != availableSpecs.length; i++) {
         try {
@@ -247,21 +234,19 @@ public abstract class BaseBlockCipher extends CipherSpi {
           // try another if possible
         }
       }
-
       if (paramSpec == null) {
         throw new InvalidAlgorithmParameterException("can't handle parameter "
-                + params.toString());
+            + params.toString());
       }
     }
 
     engineInit(opmode, key, paramSpec, random);
-
     engineParams = params;
   }
 
   @Override
   protected void engineInit(int opmode, Key key, SecureRandom random)
-          throws InvalidKeyException {
+      throws InvalidKeyException {
     try {
       engineInit(opmode, key, (AlgorithmParameterSpec) null, random);
     } catch (InvalidAlgorithmParameterException e) {
@@ -298,16 +283,15 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
   @Override
   protected int engineUpdate(byte[] input, int inputOffset, int inputLen,
-                             byte[] output, int outputOffset) throws ShortBufferException {
+      byte[] output, int outputOffset) throws ShortBufferException {
     if (inputOffset < 0 || inputLen < 0 || outputOffset < 0
             || (input != null && (inputOffset + inputLen) > input.length)) {
-      throw new IllegalArgumentException(
-              "input offset or input length or output offset is nagetive, or input exceeds the array boundary!");
+      throw new IllegalArgumentException("input offset or input length or output"
+            + "offset is nagetive, or input exceeds the array boundary!");
     }
 
     try {
-      return cipher.processBytes(input, inputOffset, inputLen, output,
-              outputOffset);
+      return cipher.processBytes(input, inputOffset, inputLen, output, outputOffset);
     } catch (DataLengthException e) {
       throw new ShortBufferException(e.getMessage());
     }
@@ -315,7 +299,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
   @Override
   protected int engineUpdate(ByteBuffer input, ByteBuffer output)
-          throws ShortBufferException {
+      throws ShortBufferException {
     if ((input == null) || (output == null)) {
       throw new IllegalArgumentException("Buffers must not be null");
     }
@@ -331,7 +315,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
   @Override
   protected byte[] engineDoFinal(byte[] input, int inputOffset, int inputLen)
-          throws IllegalBlockSizeException, BadPaddingException {
+      throws IllegalBlockSizeException, BadPaddingException {
     if (inputOffset < 0 || inputLen < 0
             || (input != null && (inputOffset + inputLen) > input.length)) {
       throw new IllegalArgumentException(
@@ -340,11 +324,9 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
     int len = 0;
     byte[] tmp = new byte[engineGetOutputSize(inputLen)];
-
     if (inputLen != 0) {
       len = cipher.processBytes(input, inputOffset, inputLen, tmp, 0);
     }
-
     try {
       len += cipher.doFinal(tmp, len);
     } catch (DataLengthException e) {
@@ -352,11 +334,9 @@ public abstract class BaseBlockCipher extends CipherSpi {
     } catch (InvalidCipherTextException e) {
       throw new BadPaddingException(e.getMessage());
     }
-
     if (len == tmp.length) {
       return tmp;
     }
-
     byte[] out = new byte[len];
     System.arraycopy(tmp, 0, out, 0, len);
     return out;
@@ -364,22 +344,20 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
   @Override
   protected int engineDoFinal(byte[] input, int inputOffset, int inputLen,
-                              byte[] output, int outputOffset) throws IllegalBlockSizeException,
-          BadPaddingException, ShortBufferException {
+      byte[] output, int outputOffset) throws IllegalBlockSizeException,
+      BadPaddingException, ShortBufferException {
     if (inputOffset < 0 || inputLen < 0 || outputOffset < 0
             || (input != null && (inputOffset + inputLen) > input.length)) {
-      throw new IllegalArgumentException(
-              "input offset or input length or output offset is nagetive, or input exceeds the array boundary!");
+      throw new IllegalArgumentException("input offset or input length or output offset" +
+          "is nagetive, or input exceeds the array boundary!");
     }
 
     try {
       int len = 0;
-
       if (inputLen != 0) {
         len = cipher.processBytes(input, inputOffset, inputLen, output,
                 outputOffset);
       }
-
       return (len + cipher.doFinal(output, outputOffset + len));
     } catch (OutputLengthException e) {
       throw new ShortBufferException(e.getMessage());
@@ -392,8 +370,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
   @Override
   protected int engineDoFinal(ByteBuffer input, ByteBuffer output)
-          throws ShortBufferException, IllegalBlockSizeException,
-          BadPaddingException {
+      throws ShortBufferException, IllegalBlockSizeException, BadPaddingException {
     if ((input == null) || (output == null)) {
       throw new IllegalArgumentException("Buffers must not be null");
     }
@@ -409,7 +386,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
   static private interface GenericBlockCipher {
     public void init(boolean forEncryption, CipherParameters params)
-            throws IllegalArgumentException;
+        throws IllegalArgumentException;
 
     public String getAlgorithmName();
 
@@ -418,53 +395,42 @@ public abstract class BaseBlockCipher extends CipherSpi {
     public int getOutputSize(int len);
 
     public int processBytes(byte[] in, int inOff, int len, byte[] out,
-                            int outOff) throws DataLengthException;
+        int outOff) throws DataLengthException;
 
     public int processBytes(ByteBuffer input, ByteBuffer output)
-            throws ShortBufferException;
+        throws ShortBufferException;
 
-    public int doFinal(byte[] out, int outOff) throws IllegalStateException,
-            InvalidCipherTextException;
+    public int doFinal(byte[] out, int outOff) throws IllegalStateException, InvalidCipherTextException;
 
-    public int doFinal(ByteBuffer input, ByteBuffer output)
-            throws ShortBufferException;
+    public int doFinal(ByteBuffer input, ByteBuffer output) throws ShortBufferException;
 
     public void setPadding(String padding) throws NoSuchPaddingException;
   }
 
   private static class GenericBlockCipherImpl implements GenericBlockCipher {
-
-    /*
-     *
-     */
     private BlockCipher cipher;
 
-    /*
+    /**
      * the Padding type
      */
-    private String padding = NOPADDING;
+    private String padding = Constants.NOPADDING;
 
-    /*
-     * the value of NoPadding
-     */
-    private static final String NOPADDING = "NOPADDING";
-
-    /*
+    /**
      * are we encrypting or not?
      */
     private boolean forEncryption;
 
-    /*
+    /**
      * index of the content size left in the buffer
      */
     private int buffered = 0;
 
-    /*
+    /**
      * the head length of encryption
      */
     private int head = 0;
 
-    /*
+    /**
      * internal buffer
      */
     private int blockSize = 0;
@@ -476,12 +442,11 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
     @Override
     public void init(boolean forEncryption, CipherParameters params)
-            throws IllegalArgumentException {
+        throws IllegalArgumentException {
       this.buffered = 0;
       this.forEncryption = forEncryption;
       cipher.init(forEncryption, params);
       blockSize = cipher.getBlockSize();
-
     }
 
     @Override
@@ -496,22 +461,16 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
     @Override
     public int getOutputSize(int len) {
-
       if (len == 0 && head == 2) {
         return 0;
       }
-
       int totalLen = buffered + len;
-
-      if (padding.equals(NOPADDING))
+      if (padding.equals(Constants.NOPADDING))
         return totalLen;
-
       if (!forEncryption)
         return totalLen;
-
       if (totalLen < blockSize)
         return blockSize;
-
       return totalLen + blockSize - (len % blockSize) + head;
     }
 
@@ -529,17 +488,14 @@ public abstract class BaseBlockCipher extends CipherSpi {
      */
     @Override
     public int processBytes(byte[] in, int inOff, int len, byte[] out,
-                            int outOff) throws DataLengthException {
-
+        int outOff) throws DataLengthException {
       if (len < 0) {
         throw new IllegalArgumentException(
                 "Can't have a negative input length!");
       }
-
       int length = getOutputSize(len);
-
       if (length > 0) {
-        if ((((forEncryption && padding.equals(NOPADDING)) &&
+        if ((((forEncryption && padding.equals(Constants.NOPADDING)) &&
                 (outOff + length) > out.length) ||
                 (!forEncryption && (outOff + length - blockSize) > out.length))) {
           throw new OutputLengthException("output buffer too short");
@@ -547,7 +503,6 @@ public abstract class BaseBlockCipher extends CipherSpi {
       }
 
       int outConsumed = cipher.processBlock(in, inOff, len, out, outOff);
-
       if (cipher.getMode() == Constants.MODE_CBC)
         buffered = (buffered + len) % blockSize;
       return outConsumed;
@@ -555,20 +510,19 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
     @Override
     public int processBytes(ByteBuffer input, ByteBuffer output)
-            throws ShortBufferException {
+        throws ShortBufferException {
       return bufferCrypt(input, output, true);
     }
 
     @Override
-    public int doFinal(byte[] out, int outOff) throws IllegalStateException,
-            InvalidCipherTextException {
+    public int doFinal(byte[] out, int outOff)
+        throws IllegalStateException, InvalidCipherTextException {
       try {
         int length = getOutputSize(0);
         if (outOff + length > out.length) {
           throw new OutputLengthException(
-                  "output buffer too short for doFinal()");
+              "output buffer too short for doFinal()");
         }
-
         return cipher.doFinal(out, outOff);
       } catch (Exception e) {
         throw new RuntimeException(e);
@@ -580,7 +534,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
     @Override
     public int doFinal(ByteBuffer input, ByteBuffer output)
-            throws ShortBufferException {
+        throws ShortBufferException {
       int result = 0;
       try {
         result = bufferCrypt(input, output, false);
@@ -591,14 +545,13 @@ public abstract class BaseBlockCipher extends CipherSpi {
         buffered = 0;
       }
       return result;
-
     }
 
     private int bufferCrypt(ByteBuffer input, ByteBuffer output,
-                            boolean isUpdate) throws ShortBufferException {
+        boolean isUpdate) throws ShortBufferException {
       if ((input == null) || (output == null)) {
         throw new NullPointerException(
-                "Input and output buffers must not be null");
+            "Input and output buffers must not be null");
       }
       int inPos = input.position();
       int inLimit = input.limit();
@@ -612,20 +565,16 @@ public abstract class BaseBlockCipher extends CipherSpi {
       if (!isUpdate && outLenNeeded == 0) {
         return 0;
       }
-
       if (!input.isDirect() || !output.isDirect()) {
         throw new IllegalArgumentException(
-                "ByteBuffer of input and output must be direct");
+            "ByteBuffer of input and output must be direct");
       }
-
       if (output.remaining() < outLenNeeded) {
         throw new ShortBufferException("Need at least " + outLenNeeded
-                + " bytes of space in output buffer");
+            + " bytes of space in output buffer");
       }
-
       // need native process
       int n = cipher.bufferCrypt(input, output, isUpdate);
-
       if (cipher.getMode() == Constants.MODE_CBC)
         buffered = (buffered + inLen) % blockSize;
       input.position(input.limit());
@@ -646,24 +595,23 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
       if (paddingName == null) {
         throw new NoSuchPaddingException("null padding");
-      }
-      if (paddingName.equalsIgnoreCase("NoPadding")) {
-        padding = NOPADDING;
+      } else if (paddingName.equalsIgnoreCase("NoPadding")) {
+        padding = Constants.NOPADDING;
       } else if (!paddingName.equalsIgnoreCase("PKCS5Padding")) {
         throw new NoSuchPaddingException("Padding: " + paddingName
-                + " not implemented");
+            + " not implemented");
       }
-      if ((!padding.equals(NOPADDING)) && (cipher.getAlgorithmName().contains("CTR"))) {
-        this.padding = NOPADDING;
+      if ((!padding.equals(Constants.NOPADDING)) && (cipher.getAlgorithmName().contains("CTR"))) {
+        this.padding = Constants.NOPADDING;
         throw new NoSuchPaddingException(cipher.getAlgorithmName() +
-                " mode must be used with NoPadding");
+            " mode must be used with NoPadding");
       }
       this.padding = paddingName;
       
       if (paddingName.equalsIgnoreCase("NoPadding")) {
-      	cipher.setPadding(Constants.PADDING_NOPADDING);
+        cipher.setPadding(Constants.PADDING_NOPADDING);
       } else if (paddingName.equalsIgnoreCase("PKCS5Padding")) {
-      	cipher.setPadding(Constants.PADDING_PKCS5PADDING);
+        cipher.setPadding(Constants.PADDING_PKCS5PADDING);
       }
     }
   }

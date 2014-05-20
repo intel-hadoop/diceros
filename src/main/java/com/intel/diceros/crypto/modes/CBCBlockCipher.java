@@ -32,7 +32,6 @@ import java.nio.ByteBuffer;
 public class CBCBlockCipher implements BlockCipher {
 
   private byte[] IV;
-
   private int blockSize;
   private BlockCipher cipher = null;
   private boolean encrypting;
@@ -42,11 +41,9 @@ public class CBCBlockCipher implements BlockCipher {
    *
    * @param cipher the block cipher to be used as the basis of chaining.
    */
-  public CBCBlockCipher(
-          BlockCipher cipher) {
+  public CBCBlockCipher(BlockCipher cipher) {
     this.cipher = cipher;
     this.blockSize = cipher.getBlockSize();
-
     this.IV = new byte[blockSize];
   }
 
@@ -66,44 +63,32 @@ public class CBCBlockCipher implements BlockCipher {
    * @param encrypting if true the cipher is initialised for
    *                   encryption, if false for decryption.
    * @param params     the key and other data required by the cipher.
-   * @throws IllegalArgumentException if the params argument is
-   *                                  inappropriate.
+   * @throws IllegalArgumentException if the params argument is inappropriate.
    */
-  public void init(
-          boolean encrypting,
-          CipherParameters params)
-          throws IllegalArgumentException {
+  public void init(boolean encrypting, CipherParameters params)
+      throws IllegalArgumentException {
     boolean oldEncrypting = this.encrypting;
-
     this.encrypting = encrypting;
 
+    CipherParameters keyParam = null;
     if (params instanceof ParametersWithIV) {
       ParametersWithIV ivParam = (ParametersWithIV) params;
       byte[] iv = ivParam.getIV();
-
       if (iv.length != blockSize) {
         throw new IllegalArgumentException("initialisation vector must be the same length as block size");
       }
-
       System.arraycopy(iv, 0, IV, 0, iv.length);
-
-      cipher.setIV(IV);
-
-      // if null it's an IV changed only.
-      if (ivParam.getParameters() != null) {
-        cipher.init(encrypting, ivParam.getParameters());
-      } else if (oldEncrypting != encrypting) {
-        throw new IllegalArgumentException("cannot change encrypting state without providing key.");
-      }
+      keyParam = ivParam.getParameters();
     } else {
-      cipher.setIV(IV);
-
-      // if it's null, key is to be reused.
-      if (params != null) {
-        cipher.init(encrypting, params);
-      } else if (oldEncrypting != encrypting) {
-        throw new IllegalArgumentException("cannot change encrypting state without providing key.");
-      }
+      keyParam = params;
+    }
+    
+    cipher.setIV(IV);
+    // if it's null, key is to be reused.
+    if (keyParam != null || oldEncrypting == encrypting) {
+      cipher.init(encrypting, keyParam);
+    } else {
+      throw new IllegalArgumentException("cannot change encrypting state without providing key.");
     }
   }
 
@@ -118,8 +103,8 @@ public class CBCBlockCipher implements BlockCipher {
   }
 
   @Override
-  public int processBlock(byte[] in, int inOff, int inLen, byte[] out,
-                          int outOff) throws DataLengthException, IllegalStateException {
+  public int processBlock(byte[] in, int inOff, int inLen, byte[] out, int outOff)
+      throws DataLengthException, IllegalStateException {
     /**
      * EVP_DecryptInit_ex(), EVP_DecryptUpdate() and EVP_DecryptFinal_ex() are the corresponding
      * decryption operations. EVP_DecryptFinal() will return an error code if padding is enabled

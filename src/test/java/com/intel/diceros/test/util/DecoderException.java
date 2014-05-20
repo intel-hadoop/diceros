@@ -18,8 +18,7 @@
 
 package com.intel.diceros.test.util;
 
-public class DecoderException
-        extends IllegalStateException {
+public class DecoderException extends IllegalStateException {
   private static final long serialVersionUID = 8300193876600909093L;
   private Throwable cause;
 

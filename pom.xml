@@ -18,7 +18,7 @@
 
     <groupId>com.intel.diceros</groupId>
     <artifactId>diceros</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <packaging>jar</packaging>
 
     <name>diceros</name>
@@ -51,12 +51,7 @@
                 <crypto.prefix></crypto.prefix>
                 <crypto.lib></crypto.lib>
                 <crypto.include></crypto.include>
-                <yasm.prefix></yasm.prefix>
                 <require.crypto>true</require.crypto>
-                <aesmb.prefix></aesmb.prefix>
-                <aesmb.lib></aesmb.lib>
-                <aesmb.include></aesmb.include>
-                <require.aesmb>true</require.aesmb>
             </properties>
             <build>
                 <plugins>
@@ -108,27 +103,14 @@
                                 </goals>
                                 <configuration>
                                     <target>
-                                        <copy todir="${project.build.directory}/native/aesmb/">
-                                            <fileset dir="src/main/native/aesmb/">
-                                                <exclude name='**/*svn' />
-                                            </fileset>
-                                        </copy>
-                                        <exec executable="make" dir="${project.build.directory}/native/aesmb/"
-                                              failonerror="true">
-                                            <arg line="YASM_BIN=${yasm.prefix}yasm"/>
-                                        </exec>
-                                        <copy file="${project.build.directory}/native/aesmb/libaesmb.so" tofile="${project.build.directory}/native/target/usr/local/lib/libaesmb.so"/>
-
                                         <exec executable="cmake" dir="${project.build.directory}/native"
                                               failonerror="true">
-                                            <arg line="${basedir}/src/ -DGENERATED_JAVAH=${project.build.directory}/native/javah -DJVM_ARCH_DATA_MODEL=${sun.arch.data.model} -DREQUIRE_CRYPTO=${require.crypto} -DCUSTOM_CRYPTO_PREFIX=${crypto.prefix} -DCUSTOM_CRYPTO_LIB=${crypto.lib} -DCUSTOM_CRYPTO_INCLUDE=${crypto.include} -DREQUIRE_AESMB=${require.aesmb} -DCUSTOM_AESMB_PREFIX=${aesmb.prefix} -DCUSTOM_AESMB_LIB=${aesmb.lib} -DCUSTOM_AESMB_INCLUDE=${aesmb.include}"/>
+                                            <arg line="${basedir}/src/ -DGENERATED_JAVAH=${project.build.directory}/native/javah -DJVM_ARCH_DATA_MODEL=${sun.arch.data.model} -DREQUIRE_CRYPTO=${require.crypto} -DCUSTOM_CRYPTO_PREFIX=${crypto.prefix} -DCUSTOM_CRYPTO_LIB=${crypto.lib} -DCUSTOM_CRYPTO_INCLUDE=${crypto.include}"/>
                                         </exec>
                                         <exec executable="make" dir="${project.build.directory}/native"
                                               failonerror="true">
                                             <arg line="VERBOSE=1"/>
                                         </exec>
-                                        <exec executable="make" dir="${project.build.directory}/native"
-                                              failonerror="true"></exec>
                                     </target>
                                 </configuration>
                             </execution>

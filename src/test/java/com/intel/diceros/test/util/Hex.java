@@ -25,8 +25,7 @@ import java.io.OutputStream;
 public class Hex {
   private static final Encoder encoder = new HexEncoder();
 
-  public static String toHexString(
-          byte[] data) {
+  public static String toHexString(byte[] data) {
     return toHexString(data, 0, data.length);
   }
 
@@ -43,8 +42,7 @@ public class Hex {
    *
    * @return a byte array containing the Hex encoded data.
    */
-  public static byte[] encode(
-          byte[] data) {
+  public static byte[] encode(byte[] data) {
     return encode(data, 0, data.length);
   }
 
@@ -99,8 +97,7 @@ public class Hex {
    *
    * @return a byte array representing the decoded data.
    */
-  public static byte[] decode(
-          byte[] data) {
+  public static byte[] decode(byte[] data) {
     ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
     try {
@@ -117,8 +114,7 @@ public class Hex {
    *
    * @return a byte array representing the decoded data.
    */
-  public static byte[] decode(
-          String data) {
+  public static byte[] decode(String data) {
     ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
     try {
@@ -136,10 +132,7 @@ public class Hex {
    *
    * @return the number of bytes produced.
    */
-  public static int decode(
-          String data,
-          OutputStream out)
-          throws IOException {
+  public static int decode(String data, OutputStream out) throws IOException {
     return encoder.decode(data, out);
   }
 }

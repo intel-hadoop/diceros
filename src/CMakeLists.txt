@@ -109,11 +109,12 @@ find_path(CRYPTO_INCLUDE_DIR
     PATHS ${CUSTOM_CRYPTO_PREFIX} ${CUSTOM_CRYPTO_PREFIX}/include
         ${CUMSTOM_CRYPTO_INCLUDE})
 if (CRYPTO_LIBRARY AND CRYPTO_INCLUDE_DIR)
+    GET_FILENAME_COMPONENT(HADOOP_CRYPTO_LIBRARY ${CRYPTO_LIBRARY} NAME)
     set(DICEROS_SOURCE_FILES
-				"${D}/com/intel/diceros/crypto/engines/AESOpensslEngine.c"
-				"${D}/com/intel/diceros/provider/securerandom/DrngSecureRandom.c"
-				"${D}/com/intel/diceros/provider/securerandom/rdrand-api.c"
-				"${D}/com/intel/diceros/crypto/engines/aes_utils.c")
+                "${D}/com/intel/diceros/crypto/engines/AESOpensslEngine.c"
+                "${D}/com/intel/diceros/provider/securerandom/DrngSecureRandom.c"
+                "${D}/com/intel/diceros/provider/securerandom/rdrand-api.c"
+                "${D}/com/intel/diceros/crypto/engines/aes_utils.c")
 else (CRYPTO_LIBRARY AND CRYPTO_INCLUDE_DIR)
     set(CRYPTO_INCLUDE_DIR "")
     set(DICEROS_SOURCE_FILES "")
@@ -128,43 +129,9 @@ else (CRYPTO_LIBRARY AND CRYPTO_INCLUDE_DIR)
 endif (CRYPTO_LIBRARY AND CRYPTO_INCLUDE_DIR)
 
 
-# AES MB Cipher
-SET(STORED_CMAKE_FIND_LIBRARY_SUFFIXES CMAKE_FIND_LIBRARY_SUFFIXES)
-SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so")
-find_library(AESMB_LIBRARY
-    NAMES aesmb
-    PATHS ${D}/aesmb
-        ${D}/../../../target/native/target/usr/local/lib/
-        ${CUSTOM_AESMB_PREFIX} ${CUSTOM_AESMB_PREFIX}/lib
-        ${CUSTOM_AESMB_PREFIX}/lib64 ${CUSTOM_AESMB_LIB})
-SET(CMAKE_FIND_LIBRARY_SUFFIXES STORED_CMAKE_FIND_LIBRARY_SUFFIXES)
-
-find_path(AESMB_INCLUDE_DIR
-    NAMES aes_api.h
-    PATHS ${D}/aesmb
-        ${CUSTOM_AESMB_PREFIX} ${CUSTOM_AESMB_PREFIX}/include
-        ${CUMSTOM_AESMB_INCLUDE})
-
-if (CRYPTO_LIBRARY AND CRYPTO_INCLUDE_DIR AND AESMB_LIBRARY AND AESMB_INCLUDE_DIR)
-    GET_FILENAME_COMPONENT(HADOOP_CRYPTO_LIBRARY ${CRYPTO_LIBRARY} NAME)
-		GET_FILENAME_COMPONENT(HADOOP_AESMB_LIBRARY ${AESMB_LIBRARY} NAME)
-    set(AESMB_SOURCE_FILES
+set(AESMB_SOURCE_FILES
         "${D}/com/intel/diceros/crypto/engines/AESMutliBufferEngine.c"
-				"${D}/com/intel/diceros/crypto/engines/aes_multibuffer.c")
-else (CRYPTO_LIBRARY AND CRYPTO_INCLUDE_DIR AND AESMB_LIBRARY AND AESMB_INCLUDE_DIR)
-    set(AESMB_INCLUDE_DIR "")
-    set(AESMB_SOURCE_FILES "")
-    IF(REQUIRE_AESMB)
-        MESSAGE(FATAL_ERROR "Required crypto or aesmb library could not be found.
-        CRYPTO_LIBRARY=${CRYPTO_LIBRARY},
-        AESMB_LIBRARY=${AESMB_LIBRARY},
-        AESMB_INCLUDE_DIR=${AESMB_INCLUDE_DIR},
-        CRYPTO_INCLUDE_DIR=${CRYPTO_INCLUDE_DIR},
-        CUSTOM_CRYPTO_INCLUDE_DIR=${CUSTOM_CRYPTO_INCLUDE_DIR},
-        CUSTOM_CRYPTO_PREFIX=${CUSTOM_CRYPTO_PREFIX},
-        CUSTOM_CRYPTO_INCLUDE=${CUSTOM_CRYPTO_INCLUDE}")
-    ENDIF(REQUIRE_AESMB)
-endif (CRYPTO_LIBRARY AND CRYPTO_INCLUDE_DIR AND AESMB_LIBRARY AND AESMB_INCLUDE_DIR)
+        "${D}/com/intel/diceros/crypto/engines/aes_multibuffer.c")
 
 include_directories(
     ${GENERATED_JAVAH}
@@ -174,7 +141,6 @@ include_directories(
     ${CMAKE_BINARY_DIR}
     ${JNI_INCLUDE_DIRS}
     ${AES_INCLUDE_DIR}
-    ${AESMB_INCLUDE_DIR}
     ${D}/util
 )
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/config.h.cmake ${CMAKE_BINARY_DIR}/config.h)
@@ -195,7 +161,7 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     # However, $ORIGIN is not supported by all operating systems.
     #
     SET_TARGET_PROPERTIES(diceros
-	PROPERTIES INSTALL_RPATH "\$ORIGIN/")
+    PROPERTIES INSTALL_RPATH "\$ORIGIN/")
 ENDIF()
 
 target_link_dual_libraries(diceros
@@ -203,7 +169,7 @@ target_link_dual_libraries(diceros
     ${JAVA_JVM_LIBRARY}
     ${CRYPTO_LIBRARY}
 )
-SET(LIBDICEROS_VERSION "1.1.0")
+SET(LIBDICEROS_VERSION "1.2.0")
 SET_TARGET_PROPERTIES(diceros PROPERTIES
     SOVERSION ${LIBDICEROS_VERSION})
 dual_output_directory(diceros target/usr/local/lib)

@@ -33,8 +33,8 @@ import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 
 /**
- * This class implements the AES algorithm in the mode <code>CTR</code> and
- * padding schemes <code>NoPadding</code>
+ * This class implements the AES algorithm in the mode <code>CTR</code>,
+ * <code>CBC</code> and <code>MBCBC</code>.
  */
 public class AES {
   private AES() {
@@ -45,7 +45,7 @@ public class AES {
     private Cipher defaultCipher = null;
 
     // load the libraries needed by AES algorithm, when failed, use the
-    // algorithm provided by "SunJCE" provider
+    // algorithm provided by default provider
     static {
       try {
         System.loadLibrary("crypto");
@@ -71,7 +71,7 @@ public class AES {
       });
 
       if (!DCProviderAvailable) {
-        defaultCipher = Cipher.getInstance("AES/CTR/NoPadding", "SunJCE");
+        defaultCipher = Cipher.getInstance("AES/CTR/NoPadding");
       }
     }
 
@@ -237,7 +237,7 @@ public class AES {
     protected Cipher defaultCipher = null;
 
     // load the libraries needed by AES algorithm, when failed, use the
-    // algorithm provided by "SunJCE" provider
+    // algorithm provided by default provider
     static {
       try {
         System.loadLibrary("crypto");
@@ -263,7 +263,7 @@ public class AES {
       });
 
       if (!DCProviderAvailable) {
-        defaultCipher = Cipher.getInstance("AES/CBC/NoPadding", "SunJCE");
+        defaultCipher = Cipher.getInstance("AES/CBC/NoPadding");
       }
     }
 
@@ -433,7 +433,7 @@ public class AES {
     private Cipher defaultCipher = null;
 
     // load the libraries needed by AES algorithm, when failed, use the
-    // algorithm provided by "SunJCE" provider
+    // algorithm provided by default provider
     static {
       try {
         System.loadLibrary("crypto");
@@ -460,7 +460,7 @@ public class AES {
       });
 
       if (!DCProviderAvailable) {
-        defaultCipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
+        defaultCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
       }
     }
 

@@ -2,6 +2,7 @@ package com.intel.diceros.test.aes;
 
 import com.intel.diceros.provider.DicerosProvider;
 import com.intel.diceros.provider.util.Arrays;
+import com.intel.diceros.test.util.Entity;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
@@ -9,20 +10,10 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.nio.ByteBuffer;
 import java.security.*;
 
-/**
- * Created with IntelliJ IDEA.
- * User: root
- * Date: 12/11/13
- * Time: 2:31 PM
- * To change this template use File | Settings | File Templates.
- */
 public class TestCipher {
   public static void main(String[] args) {
-
-
     try {
       FileInputStream fis = new FileInputStream("/tmp/Entity0");
       ObjectInputStream ois = new ObjectInputStream(fis);
