@@ -503,8 +503,9 @@ public abstract class BaseBlockCipher extends CipherSpi {
       }
 
       int outConsumed = cipher.processBlock(in, inOff, len, out, outOff);
-      if (cipher.getMode() == Constants.MODE_CBC)
-        buffered = (buffered + len) % blockSize;
+      if (cipher.getMode() == Constants.MODE_CBC) {
+        buffered = buffered + len - outConsumed;
+      }
       return outConsumed;
     }
 
@@ -575,8 +576,9 @@ public abstract class BaseBlockCipher extends CipherSpi {
       }
       // need native process
       int n = cipher.bufferCrypt(input, output, isUpdate);
-      if (cipher.getMode() == Constants.MODE_CBC)
-        buffered = (buffered + inLen) % blockSize;
+      if (cipher.getMode() == Constants.MODE_CBC) {
+        buffered = buffered + inLen -n;
+      }
       input.position(input.limit());
       output.position(output.position() + n);
       return n;
