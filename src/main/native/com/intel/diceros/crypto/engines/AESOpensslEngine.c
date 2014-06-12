@@ -23,7 +23,8 @@
 #include "aes_utils.h"
 #include "com_intel_diceros_crypto_engines_AESOpensslEngine.h"
 
-CipherContext* preInitContext(JNIEnv *env, CipherContext* cipherCtx, jint mode, jbyteArray key, jbyteArray IV) {
+CipherContext* preInitContext(JNIEnv *env, CipherContext* cipherCtx, jint mode,
+    jbyteArray key, jbyteArray IV) {
   if (cipherCtx != NULL) {
     if (cipherCtx->opensslCtx != NULL && mode == MODE_CBC) {
       EVP_CIPHER_CTX_cleanup(cipherCtx->opensslCtx);
@@ -56,9 +57,16 @@ CipherContext* preInitContext(JNIEnv *env, CipherContext* cipherCtx, jint mode, 
     if (cipherCtx->iv != NULL) {
       free(cipherCtx->iv);
     }
-    cipherCtx->iv =  (jbyte*) malloc(cipherCtx->ivLength);
+    cipherCtx->iv = (jbyte*) malloc(cipherCtx->ivLength);
   }
   return cipherCtx;
+}
+
+JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_destoryCipherContext(
+    JNIEnv *env, jobject object, jlong cipherContext) {
+  CipherContext* cipherCtx = (CipherContext*) cipherContext;
+  destroyCipherContext(cipherCtx);
+  return 0;
 }
 
 JNIEXPORT jlong JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_initWorkingKey(
