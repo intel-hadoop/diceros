@@ -92,8 +92,19 @@ public class AESOpensslEngine implements BlockCipher {
 
   @Override
   public void reset() {
-    destoryCipherContext(aesContext);
-    aesContext = 0;
+    if (aesContext != 0) {
+      destoryCipherContext(aesContext);
+      aesContext = 0;
+    }
+  }
+
+  @Override
+  protected void finalize() throws Throwable {
+    try {
+      reset();
+    } finally {
+      super.finalize();
+    }
   }
 
   @Override
