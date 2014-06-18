@@ -35,83 +35,83 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 
 /**
- * This class does the correctness test of AES algorithm
+ * This class does the correctness test of AES CTR mode algorithm
  */
 public abstract class AESAbstarctTest extends BaseBlockCipherTest {
-  
-  private static final int BYTEBUFFER_SIZE = 1000;
-  
+
   protected String cipherName;
+
   protected String providerName;
 
-  protected static String[] cipherTests = {
-    "000102030405060708090a0b0c0d0e0f", // key data, length 128
-    "123456789abcdef1123456789abcdef1", // iv data
-    "hello world hello world hello world hello world hello world hello world123456789"}; // input data
+  protected String[] cipherTests;
 
-//  "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", // key data, length 256
-//  "123456789abcdef1123456789abcdef1", // iv data
-//  "hello world hello world hello world hello world hello world hello world123456789",}; // input data
+  // data
+  public static final int BYTEBUFFER_SIZE = 1000;
 
-  public AESAbstarctTest(String cipherName, String providerName) {
+  public AESAbstarctTest(String cipherName, String providerName,
+      String[] cipherTests) {
     super("AES");
     this.cipherName = cipherName;
     this.providerName = providerName;
+    this.cipherTests = cipherTests;
   }
 
   public AESAbstarctTest() {
     super("AES");
   }
-  
-  public void checkEqual(byte[] arg1, byte[] arg2) {
-    if (!Arrays.areEqual(arg1, arg2)) {
-      fail("AES failed decryption");
-    }
-  }
-  
-  public void checkEqual(ByteBuffer arg1, ByteBuffer arg2) {
-    int arg1Len = arg1.limit();
-    int arg2Len = arg2.limit();
-    if (arg1Len == arg2Len) {
-      int index = 0;
-      while (index < arg1Len) {
-        if (arg1.get(index) != arg2.get(index)) {
-          fail("AES failed decryption");
-          return;
-        }
-        index++;
-      }
-    } else {
-      fail("AES failed decryption");
-    }
-  }
 
   /**
-   * AES Test with byte array as input data, first encrypt the<code>input</code>,
-   * then decrypt the ciphertext result and compare it with the <code>input</code>.
-   *
-   * @param input the input data
+   * AES Test with byte array as input data, first encrypt the
+   * <code>input</code>, compare the cipherText with the <code>output</code> to
+   * verify the encryption then decrypt the cipherText, compare the plainText
+   * with the <code>input</code> to verify the decryption
+   * 
+   * @param strength
+   *          the key length
+   * @param keyBytes
+   *          the key
+   * @param ivBytes
+   *          the intialize vector
+   * @param input
+   *          the plainText data
+   * @param output
+   *          the cipherText data
    * @throws Exception
    */
-  protected void byteArrayTest(byte[] keyBytes, byte[] ivBytes, byte[] input) throws Exception {
+  protected void byteArrayTest(int strength, byte[] keyBytes, byte[] ivBytes,
+      byte[] input, byte[] output) throws Exception {
+    Key key;
+    IvParameterSpec iv;
+    Cipher in, out;
     CipherInputStream cIn;
     CipherOutputStream cOut;
     ByteArrayInputStream bIn;
-    ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+    ByteArrayOutputStream bOut;
 
-    Cipher dec = Cipher.getInstance(this.cipherName, this.providerName);
-    Cipher enc = Cipher.getInstance(this.cipherName, this.providerName);
-    Key key = new SecretKeySpec(keyBytes, "AES");
-    IvParameterSpec iv = new IvParameterSpec(ivBytes);
+    key = new SecretKeySpec(keyBytes, "AES");
+    iv = new IvParameterSpec(ivBytes);
+
+    in = Cipher.getInstance(this.cipherName, this.providerName);
+    out = Cipher.getInstance(this.cipherName, this.providerName);
+
     try {
-      enc.init(Cipher.ENCRYPT_MODE, key, iv);
-      dec.init(Cipher.DECRYPT_MODE, key, iv);
+      out.init(Cipher.ENCRYPT_MODE, key, iv);
     } catch (Exception e) {
       fail("AES failed initialisation - " + e.toString(), e);
     }
 
+    try {
+      in.init(Cipher.DECRYPT_MODE, key, iv);
+    } catch (Exception e) {
+      fail("AES failed initialisation - " + e.toString(), e);
+    }
+
+    //
     // encryption pass
-    cOut = new CipherOutputStream(bOut, enc);
+    //
+    
+    bOut = new ByteArrayOutputStream();
+    cOut = new CipherOutputStream(bOut, out);
     try {
       for (int i = 0; i != input.length / 2; i++) {
         cOut.write(input[i]);
@@ -122,33 +122,54 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
       fail("AES failed encryption - " + e.toString(), e);
     }
 
-    byte[] encBytes = bOut.toByteArray();
+    byte[] bytes;
+    
+    bytes = bOut.toByteArray();
 
+    if (!Arrays.areEqual(bytes, output)) {
+      fail("AES failed encryption - expected " + new String(Hex.encode(output))
+          + " got " + new String(Hex.encode(bytes)));
+    }
+    //
     // decryption pass
-    bIn = new ByteArrayInputStream(encBytes);
-    cIn = new CipherInputStream(bIn, dec);
-    byte[] decBytes = null;
+    //
+    bIn = new ByteArrayInputStream(output);
+    cIn = new CipherInputStream(bIn, in);
+    byte[] decByte = null;//= in.doFinal(bytes);
     try {
       DataInputStream dIn = new DataInputStream(cIn);
-      decBytes = new byte[input.length];
+      decByte = new byte[input.length];
       for (int i = 0; i != input.length / 2; i++) {
-        decBytes[i] = (byte) dIn.read();
+        decByte[i] = (byte) dIn.read();
       }
-      dIn.readFully(decBytes, input.length / 2, decBytes.length - input.length / 2);
+      dIn.readFully(decByte, input.length / 2, decByte.length - input.length
+          / 2);
     } catch (Exception e) {
       fail("AES failed encryption - " + e.toString(), e);
     }
-    
-    checkEqual(decBytes, input);
+
+    if (!Arrays.areEqual(decByte, input)) {
+      fail("AES failed decryption - expected " + new String(Hex.encode(input))
+          + " got " + new String(Hex.encode(decByte)));
+    }
   }
 
   /**
-   * AES Test with direct byte buffer as input data, first encrypt the
-   * <code>input</code>, then decrypt the ciphertext result and compare it with
-   * the <code>input</code>.
-   *
-   * @param keyBytes the key data
-   * @param input    the input data
+   * AES Test with byteBuffer as input data, first encrypt the
+   * <code>input</code>, compare the cipherText with the <code>output</code> to
+   * verify the encryption then decrypt the cipherText, compare the plainText
+   * with the <code>input</code> to verify the decryption
+   * 
+   * @param strength
+   *          the key length
+   * @param keyBytes
+   *          the key
+   * @param ivBytes
+   *          the intialize vector
+   * @param input
+   *          the plainText data
+   * @param output
+   *          the cipherText data
    * @throws NoSuchAlgorithmException
    * @throws NoSuchProviderException
    * @throws NoSuchPaddingException
@@ -156,34 +177,60 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
    * @throws Exception
    * @throws BadPaddingException
    */
-  protected void byteBufferTest(byte[] keyBytes, byte[] ivBytes, ByteBuffer input)
-      throws NoSuchAlgorithmException, NoSuchProviderException,
-      NoSuchPaddingException, ShortBufferException, BadPaddingException, IllegalBlockSizeException {
-    ByteBuffer output = ByteBuffer.allocateDirect(BYTEBUFFER_SIZE);
+  protected void byteBufferTest(int strength, byte[] keyBytes, byte[] ivBytes,
+      ByteBuffer input, ByteBuffer output) throws NoSuchAlgorithmException,
+      NoSuchProviderException, NoSuchPaddingException, ShortBufferException,
+      BadPaddingException, IllegalBlockSizeException {
     ByteBuffer decResult = ByteBuffer.allocateDirect(BYTEBUFFER_SIZE);
+    ByteBuffer encResult = ByteBuffer.allocateDirect(BYTEBUFFER_SIZE);
+    Key key;
+    Cipher enc, dec;
+    IvParameterSpec iv;
 
-    Key key = new SecretKeySpec(keyBytes, "AES");
-    IvParameterSpec iv = new IvParameterSpec(ivBytes);
-    Cipher enc = Cipher.getInstance(this.cipherName, this.providerName);
-    Cipher dec = Cipher.getInstance(this.cipherName, this.providerName);
+    key = new SecretKeySpec(keyBytes, "AES");
+    iv = new IvParameterSpec(ivBytes);
+
+    enc = Cipher.getInstance(this.cipherName, this.providerName);
+    dec = Cipher.getInstance(this.cipherName, this.providerName);
 
     try {
       enc.init(Cipher.ENCRYPT_MODE, key, iv);
+    } catch (Exception e) {
+      fail("AES failed initialisation - " + e.toString(), e);
+    }
+
+    try {
       dec.init(Cipher.DECRYPT_MODE, key, iv);
     } catch (Exception e) {
       fail("AES failed initialisation - " + e.toString(), e);
     }
 
-    // encryption
-    enc.doFinal(input, output);
-    output.flip();
-
-    // decryption
-    dec.doFinal(output, decResult);
+    //
+    // encryption pass
+    //
+    enc.doFinal(input, encResult);
     input.flip();
+    encResult.flip();
+    if (!output.equals(encResult)) {
+      fail("AES failed encryption - expected " + new String(Hex.encode(output.array()))
+      + " got " + new String(Hex.encode(encResult.array())));
+    }
+
+    //
+    // decryption pass
+    //
+    dec.doFinal(encResult, decResult);
     decResult.flip();
 
-    checkEqual(input, decResult);
+    if (!input.equals(decResult)) {
+      byte[] inArray = new byte[input.remaining()];
+      byte[] decResultArray = new byte[decResult.remaining()];
+      input.get(inArray);
+      decResult.get(decResultArray);
+      fail("AES failed decryption - expected "
+          + new String(Hex.encode(inArray)) + " got "
+          + new String(Hex.encode(decResultArray)));
+    }
   }
 
   /**
@@ -192,9 +239,14 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
    * then decrypt the ciphertext result and compare it with the
    * <code>inputByteArray</code> and <code>inputByteBuffer</code>.
    *
-   * @param keyBytes        the key data
-   * @param inputByteArray  the input byte array
-   * @param inputByteBuffer the input direct byte buffer
+   * @param strength
+   *          the key length
+   * @param keyBytes
+   *          the key data
+   * @param inputByteArray
+   *          the input byte array
+   * @param inputByteBuffer
+   *          the input direct byte buffer
    * @throws NoSuchAlgorithmException
    * @throws NoSuchProviderException
    * @throws NoSuchPaddingException
@@ -202,31 +254,48 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
    * @throws Exception
    * @throws BadPaddingException
    */
-  protected void mixTest(byte[] keyBytes, byte[] ivBytes, byte[] inputByteArray,
-      ByteBuffer inputByteBuffer) throws NoSuchAlgorithmException,
-        NoSuchProviderException, NoSuchPaddingException, ShortBufferException,
-        Exception, BadPaddingException {
+  protected void mixTest(int strength,byte[] keyBytes, byte[] ivBytes, byte[] inputByteArray,
+      ByteBuffer inputByteBuffer) throws NoSuchAlgorithmException,NoSuchProviderException, 
+      NoSuchPaddingException, ShortBufferException, Exception, BadPaddingException {
     ByteBuffer output = ByteBuffer.allocateDirect(BYTEBUFFER_SIZE);
     ByteBuffer decResult = ByteBuffer.allocateDirect(BYTEBUFFER_SIZE);
+    Key key;
+    IvParameterSpec iv;
+    Cipher enc, dec;
 
-    Key key = new SecretKeySpec(keyBytes, "AES");
-    IvParameterSpec iv = new IvParameterSpec(ivBytes);
-    Cipher enc = Cipher.getInstance(this.cipherName, this.providerName);
-    Cipher dec = Cipher.getInstance(this.cipherName, this.providerName);
+    key = new SecretKeySpec(keyBytes, "AES");
+    iv = new IvParameterSpec(ivBytes);
+    
+    enc = Cipher.getInstance(this.cipherName, this.providerName);
+    dec = Cipher.getInstance(this.cipherName, this.providerName);
+
     try {
       enc.init(Cipher.ENCRYPT_MODE, key, iv);
+    } catch (Exception e) {
+      fail("AES failed initialisation - " + e.toString(), e);
+    }
+
+    try {
       dec.init(Cipher.DECRYPT_MODE, key, iv);
     } catch (Exception e) {
       fail("AES failed initialisation - " + e.toString(), e);
     }
 
+    //
     // encryption pass
-    output.put(enc.update(inputByteArray));
+    //
+    byte[] bytes = null;
+    bytes = enc.update(inputByteArray);
+    if (bytes != null) {
+      output.put(bytes);
+    }
     enc.update(inputByteBuffer, output);
     output.put(enc.doFinal());
     output.flip();
 
+    //
     // decryption pass
+    //
     dec.doFinal(output, decResult);
     inputByteBuffer.flip();
     decResult.flip();
@@ -235,35 +304,50 @@ public abstract class AESAbstarctTest extends BaseBlockCipherTest {
     totalInput.put(inputByteArray);
     totalInput.put(inputByteBuffer);
     totalInput.flip();
-    
-    checkEqual(totalInput, decResult);
+    // inputByteBuffer.flip();
+    if (!totalInput.equals(decResult)) {
+      byte[] inArray = new byte[totalInput.remaining()];
+      byte[] decResultArray = new byte[decResult.remaining()];
+      totalInput.get(inArray);
+      decResult.get(decResultArray);
+      fail("AES failed decryption - expected "
+          + new String(Hex.encode(inArray)) + " got "
+          + new String(Hex.encode(decResultArray)));
+    }
   }
 
   /**
-   * Perform the AES function test.
+   * Perform the aes correctness test.
    */
   public void performTest() throws Exception {
-    for (int i = 0; i != cipherTests.length; i += 3) {
-      byteArrayTest(Hex.decode(cipherTests[i]), Hex.decode(cipherTests[i + 1].getBytes()),
-          cipherTests[i + 2].getBytes());
+    for (int i = 0; i != cipherTests.length; i += 5) {
+      byteArrayTest(Integer.parseInt(cipherTests[i]),
+          Hex.decode(cipherTests[i + 1]), Hex.decode(cipherTests[i + 2]),
+          Hex.decode(cipherTests[i + 3]), Hex.decode(cipherTests[i + 4]));
     }
 
-    for (int i = 0; i != cipherTests.length; i += 3) {
-      byte[] inputBytes = cipherTests[i + 2].getBytes();
+    for (int i = 0; i != cipherTests.length; i += 5) {
+      byte[] inputBytes = Hex.decode(cipherTests[i + 3]);
+      byte[] outputBytes = Hex.decode(cipherTests[i + 4]);
+      ByteBuffer inputBuffer = ByteBuffer.allocateDirect(inputBytes.length);
+      ByteBuffer outputBuffer = ByteBuffer.allocateDirect(outputBytes.length);
+      inputBuffer.put(inputBytes);
+      inputBuffer.flip();
+      outputBuffer.put(outputBytes);
+      outputBuffer.flip();
+      byteBufferTest(Integer.parseInt(cipherTests[i]),
+          Hex.decode(cipherTests[i + 1]), Hex.decode(cipherTests[i + 2]),
+          inputBuffer, outputBuffer);
+    }
+
+    for (int i = 0; i != cipherTests.length; i += 5) {
+      byte[] inputBytes = Hex.decode(cipherTests[i+3]);
       ByteBuffer inputBuffer = ByteBuffer.allocateDirect(inputBytes.length);
       inputBuffer.put(inputBytes);
       inputBuffer.flip();
-      byteBufferTest(Hex.decode(cipherTests[i]), Hex.decode(cipherTests[i + 1].getBytes()),
-          inputBuffer);
-    }
-
-    for (int i = 0; i != cipherTests.length; i += 3) {
-      byte[] inputBytes = cipherTests[i + 2].getBytes();
-      ByteBuffer inputBuffer = ByteBuffer.allocateDirect(inputBytes.length);
-      inputBuffer.put(inputBytes);
-      inputBuffer.flip();
-      mixTest(Hex.decode(cipherTests[i]), Hex.decode(cipherTests[i + 1].getBytes()),
-          inputBytes, inputBuffer);
+      mixTest(Integer.parseInt(cipherTests[i]),
+              Hex.decode(cipherTests[i+1]), Hex.decode(cipherTests[i+2]), inputBytes, 
+              inputBuffer);
     }
   }
 
