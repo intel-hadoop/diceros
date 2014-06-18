@@ -84,8 +84,11 @@ public class KatSuite {
   }
 
   public enum KATTYPE {
-    GFSBOX("GFSbox"), KEYSBOX("keySbox"), VARKEY("Variable Key"), VARTEXT(
-        "Variable Text"), ;
+    GFSBOX("GFSbox"),
+    KEYSBOX("keySbox"),
+    VARKEY("Variable Key"),
+    VARTEXT("Variable Text");
+
     private String name;
 
     private KATTYPE(String name) {

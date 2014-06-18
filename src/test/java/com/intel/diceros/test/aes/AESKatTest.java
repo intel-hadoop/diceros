@@ -51,33 +51,32 @@ import com.intel.diceros.test.BaseBlockCipherTest;
 import com.intel.diceros.test.aes.KatSuite.KATTYPE;
 import com.intel.diceros.test.util.Hex;
 
-/*
- * This junit class test the Known Answer Test for AES CBC mode 
+/**
+ * This junit class test the Known Answer Test for AES CBC mode
  * The response file for 128,256 key length testing with AES CBC Mode
- * There are four types of Known Answer Test: 
-   GFSbox 
-   KeySbox 
-   Variable Key 
-   Variable Text 
- 
- * The REQUEST file for each of these KAT tests contains a series of data sets consisting of 
- * a key, an initialization vector (IV) (for all modes except ECB), and a plaintext for 
- * encryption (or a ciphertext for decryption). The following is a sample data set: 
- 
-   KEY = 00000000000000000000000000000000 
-   IV = 00000000000000000000000000000000 
-   PLAINTEXT = 6a84867cd77e12ad07ea1be895c53fa3 
- 
- * The RESPONSE file for the KAT tests contains the same data as the REQUEST file with 
- * the addition of the ciphertext for encryption (or plaintext for decryption).  The following 
- * is a sample data set: 
- 
-   KEY = 00000000000000000000000000000000 
-   IV = 00000000000000000000000000000000 
-   PLAINTEXT = 6a84867cd77e12ad07ea1be895c53fa3 
-   CIPHERTEXT = 732281c0a0aab8f7a54a0c67a0c45ecf  
-   The testing resources contain the values for each of the four types of Known Answer Test. 
+ * There are four types of Known Answer Test:
+ * GFSbox
+ * KeySbox
+ * Variable Key
+ * Variable Text
  * 
+ * The REQUEST file for each of these KAT tests contains a series of data sets consisting of
+ * a key, an initialization vector (IV) (for all modes except ECB), and a plaintext for
+ * encryption (or a ciphertext for decryption). The following is a sample data set:
+ * 
+ * KEY = 00000000000000000000000000000000
+ * IV = 00000000000000000000000000000000
+ * PLAINTEXT = 6a84867cd77e12ad07ea1be895c53fa3
+ * 
+ * The RESPONSE file for the KAT tests contains the same data as the REQUEST file with
+ * the addition of the ciphertext for encryption (or plaintext for decryption).  The following
+ * is a sample data set:
+ * 
+ * KEY = 00000000000000000000000000000000
+ * IV = 00000000000000000000000000000000
+ * PLAINTEXT = 6a84867cd77e12ad07ea1be895c53fa3
+ * CIPHERTEXT = 732281c0a0aab8f7a54a0c67a0c45ecf
+ * The testing resources contain the values for each of the four types of Known Answer Test.
  */
 
 public class AESKatTest extends BaseBlockCipherTest{
@@ -142,14 +141,14 @@ public class AESKatTest extends BaseBlockCipherTest{
       }
     }
   }
-  
+
   private List<KatSuite> loadKatSuites(String mode, KATTYPE type)
       throws Exception {
     Map<String, String[]> modeSuite = ALL_KAT_SUITE.get(mode);
     String[] rsps = modeSuite.get(type.getName());
     return parseSuites(rsps);
   }
-  
+
   private List<KatSuite> parseSuites(String[] filenames) throws Exception {
     List<KatSuite> suites = new ArrayList<KatSuite>();
     try {
@@ -214,7 +213,7 @@ public class AESKatTest extends BaseBlockCipherTest{
 
     return suites;
   }
-  
+
   private List<Reader> getReaders(String[] filenames) {
     String resource = RESOURCES_PREFIX.startsWith("/") ? RESOURCES_PREFIX
         .substring(1) : RESOURCES_PREFIX;
@@ -253,7 +252,7 @@ public class AESKatTest extends BaseBlockCipherTest{
     }
     return readers;
   }
-  
+
   private List<String> tokenize(String string, String delimiters,
       boolean trimTokens, boolean ignoreEmptyTokens) {
     if (string == null) {
@@ -272,13 +271,13 @@ public class AESKatTest extends BaseBlockCipherTest{
     }
     return tokens;
   }
-  
+
   public void testAESKat() {
     runTest(new AESKatTest());
   }
+
   public static void main(String[] args) throws Exception{
     new AESKatTest().testAESKat();
   }
-  
 
 }
