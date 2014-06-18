@@ -50,10 +50,8 @@ typedef struct _CipherContext{
 } CipherContext;
 
 void* loadLibrary(const char* libname);
-int aesmb_streamlength(int inputLength);
-int aesmb_ctxinit(CipherContext* ctx, uint8_t* key, uint8_t keyLength, uint8_t* iv, uint8_t ivLength);
-void aesmb_ctxdest(CipherContext* ctx);
-int aesmb_keyivinit(CipherContext* ctx, uint8_t* key, int keyLength, uint8_t* iv, int ivLength);
+
+void destroyCipherContext(CipherContext* ctx);
 
 typedef int (*cryptInit)(EVP_CIPHER_CTX *, const EVP_CIPHER *, ENGINE *,
     const unsigned char *, const unsigned char *);

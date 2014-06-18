@@ -80,23 +80,36 @@ public class AESOpensslEngine implements BlockCipher {
   @Override
   public int processBlock(byte[] in, int inOff, int inLen, byte[] out,
       int outOff) throws DataLengthException, IllegalStateException {
+    checkCipherInit();
     return processBlock(aesContext, in, inOff, inLen, out, outOff);
   }
 
   @Override
   public int doFinal(byte[] out, int outOff) {
+    checkCipherInit();
     return doFinal(aesContext, out, outOff);
   }
 
   @Override
   public void reset() {
-    if (this.mode != Constants.MODE_CTR) {
-      init(forEncryption, params);
+    if (aesContext != 0) {
+      destoryCipherContext(aesContext);
+      aesContext = 0;
+    }
+  }
+
+  @Override
+  protected void finalize() throws Throwable {
+    try {
+      reset();
+    } finally {
+      super.finalize();
     }
   }
 
   @Override
   public int bufferCrypt(ByteBuffer input, ByteBuffer output, boolean isUpdate) {
+    checkCipherInit();
     return bufferCrypt(aesContext, input, input.position(), input.limit(), output,
         output.position(), isUpdate);
   }
@@ -111,6 +124,8 @@ public class AESOpensslEngine implements BlockCipher {
       int inLen, byte[] out, int outOff);
 
   private native int doFinal(long context, byte[] out, int outOff);
+
+  private native int destoryCipherContext(long context);
 
   @Override
   public void setIV(byte[] IV) {
@@ -135,5 +150,11 @@ public class AESOpensslEngine implements BlockCipher {
   @Override
   public int getHeadLength() {
     return 0;
+  }
+  
+  private void checkCipherInit() {
+    if (aesContext == 0) {
+      init(forEncryption, params);
+    }
   }
 }

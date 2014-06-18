@@ -24,24 +24,94 @@
 #include "aes_multibuffer.h"
 #include "config.h"
 
+#define BLOCKSIZE 16
+
 void cleanDLError() {
   dlerror();
 }
 
-void destroyCipherContext(CipherContext* ctx) {
-  aesmb_ctxdest(ctx);
-  EVP_CIPHER_CTX_cleanup(ctx->opensslCtx);
-  free(ctx->opensslCtx);
-  free(ctx);
+int aesmb_keyinit(CipherContext* ctx, uint8_t* key, int keyLength) {
+  if (NULL == key || NULL == ctx) {
+    return 0;
+  }
+
+  if (keyLength != ctx->keyLength) {
+    free(ctx->key);
+    ctx->keyLength = keyLength;
+    ctx->key = (uint8_t*) malloc (keyLength * sizeof(uint8_t));
+  }
+
+  memcpy(ctx->key, key, keyLength);
+  return 0;
 }
 
-CipherContext* createCipherContext(signed char* key, int keylen, signed char* iv, int ivlen) {
-  CipherContext* ctx = (CipherContext*) malloc (sizeof(CipherContext));
+int aesmb_ivinit(CipherContext* ctx, uint8_t* iv, int ivLength) {
+  if (NULL == iv || NULL == ctx) {
+    return 0;
+  }
+
+  if (ivLength != ctx->ivLength) {
+    free(ctx->iv);
+    ctx->ivLength = ivLength;
+    ctx->iv = (uint8_t*) malloc (ivLength * sizeof(uint8_t) * PARALLEL_LEVEL);
+  }
+
+  int i,j = 0;
+  for (i = 0 ; i < PARALLEL_LEVEL ; i++) {
+    memcpy(ctx->iv + i * ivLength, iv, ivLength);
+    // generate seven different IVs
+    for(j=0 ;j <16 ;j++){
+      *(ctx->iv + i * ivLength + j) = *(ctx->iv + i * ivLength + j) +1;
+    }
+  }
+
+  return ivLength - BLOCKSIZE;
+}
+
+int aesmb_keyivinit(CipherContext* ctx, uint8_t* key, int keyLength, uint8_t* iv, int ivLength) {
+  int result1 = aesmb_keyinit(ctx, key, keyLength);
+  int result2 = aesmb_ivinit(ctx, iv, ivLength);
+
+  if (result1 || result2) {
+    return -1;
+  }
+
+  return 0;
+}
+
+int aesmb_ctxinit(CipherContext* ctx,
+              uint8_t* key,
+              uint8_t  keyLength,
+              uint8_t* iv,
+              uint8_t  ivLength) {
+  // Do not check handle, since key and iv will need to be stored in context,
+  // even handle is NULL
+  if (NULL == ctx || NULL == key || NULL == iv) {
+    DTRACE("Invalid parameter: ctx or key or iv is NULL!");
+    return -1;
+  }
+
+  if (ivLength != BLOCKSIZE) {
+    DTRACE("Invalid parameter: iv length is not 128bit!");
+    return -2;
+  }
+
+  return aesmb_keyivinit(ctx, key, keyLength, iv, ivLength);
+}
+
+int aesmb_streamlength(int inputLength) {
+  int mbUnit = PARALLEL_LEVEL * BLOCKSIZE;
+  int mbBlocks = inputLength / mbUnit;
+  return BLOCKSIZE * mbBlocks;
+}
+
+CipherContext* createCipherContextMB(signed char* key, int keylen, signed char* iv, int ivlen) {
+  CipherContext* ctx = (CipherContext*) malloc(sizeof(CipherContext));
   memset(ctx, 0, sizeof(CipherContext));
 
-  ctx->opensslCtx = (EVP_CIPHER_CTX*) malloc (sizeof(EVP_CIPHER_CTX));
+  ctx->opensslCtx = (EVP_CIPHER_CTX*) malloc(sizeof(EVP_CIPHER_CTX));
   // init iv and key
-  int result = aesmb_ctxinit(ctx, (uint8_t*)key, keylen, (uint8_t*)iv, ivlen);
+  aesmb_ctxinit(ctx, (uint8_t*)key, keylen, (uint8_t*)iv, ivlen);
 
   return ctx;
 }
@@ -62,7 +132,7 @@ long init(int forEncryption, signed char* nativeKey, int keyLength, signed char*
   }
 
   // init all context
-  CipherContext* ctx = createCipherContext(nativeKey, keyLength, nativeIv, ivLength);
+  CipherContext* ctx = createCipherContextMB(nativeKey, keyLength, nativeIv, ivLength);
   // init openssl context, by using localized key & iv
   EVP_CIPHER_CTX_init(ctx->opensslCtx);
   opensslResetContext(forEncryption, ctx->opensslCtx, ctx);
