@@ -56,7 +56,7 @@ from http://openjdk.java.net/projects/code-tools/jmh/)
 Software prerequisite:
 * apply the performance path to diceros project. the patch address is xxx, using the following command:
 * `cd the diceros project directory`
-* `patch -p1 < patch(you download)
+* `patch -p1 < patch(you download, https://github.com/intel-hadoop/diceros/blob/master/perf/perfWithJMH.patch)
 * `mvn install `
 performance testing usage:
 java -jar target/microbenchmarks.jar .*encryptPerfTest(or .*decryptPerfTest or *.cryptPerfTest -->test for both) 
@@ -68,5 +68,5 @@ java -jar target/microbenchmarks.jar .*encryptPerfTest(or .*decryptPerfTest or *
 -p provider=xxx(default SunJCE)
 -p mode=xxx(default AES/CTR/NoPadding)
 -p directBuffer=xxx(default false)
-(see the performance testing detail from http://)
+(see the performance testing detail from https://github.com/intel-hadoop/diceros/blob/master/perf/The%20Performance%20Testing%20of%20Diceros%26SunJCE.docx)
 
