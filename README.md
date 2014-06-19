@@ -18,8 +18,8 @@ https://github.com/intel-hadoop/diceros/wiki/Quick-Start
 * AES-NI
 
 #### Software prerequisite:
-* <p>openssl-1.0.1c or above(just test openssl-1.0.1e)</p>
-* <p>openjdk7</p>
+* <p>openssl-1.0.1c or above
+* <p>openjdk6 or above, oracle jdk6 or above</p>
 * <p>add `libdiceros.so`(which are generated after build) to the environment variable `java.library.path`</p>
 * <p>add `diceros-[VERSION].jar`(which is generated after build) to the classpath</p>
 
@@ -36,6 +36,12 @@ Add line `security.provider.10=com.intel.diceros.provider.DicerosProvider` in fi
 #### Dynamic deploy:
 Add the following line `Security.addProvider(new com.intel.diceros.provider.DicerosProvider());`
 before calling method `SecureRandom.getInstace()` or `Cipher.getInstance()`.
+
+### Unlimited Strength Jurisdiction Policy Files
+If you want to use 256B as key length, you should replace file "local_policy.jar" and "US_export_policy.jar" in dir 
+<JAVA_HOME>/lib/security/ with the corresponding file from 
+http://www.oracle.com/technetwork/java/javase/downloads/jce-6-download-429243.html 
+or http://www.oracle.com/technetwork/java/javase/downloads/jce-7-download-432124.html depend on the jdk version you want to use.
 
 ### Troubleshooting
 https://github.com/intel-hadoop/diceros/wiki/Troubleshooting
