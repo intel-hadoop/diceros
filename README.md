@@ -41,7 +41,8 @@ before calling method `SecureRandom.getInstace()` or `Cipher.getInstance()`.
 If you want to use 256B as key length, you should replace file "local_policy.jar" and "US_export_policy.jar" in dir 
 <JAVA_HOME>/lib/security/ with the corresponding file from 
 http://www.oracle.com/technetwork/java/javase/downloads/jce-6-download-429243.html 
-or http://www.oracle.com/technetwork/java/javase/downloads/jce-7-download-432124.html depend on the jdk version you want to use.
+or http://www.oracle.com/technetwork/java/javase/downloads/jce-7-download-432124.html 
+or http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html depend on the jdk version you want to use.
 
 ### Troubleshooting
 https://github.com/intel-hadoop/diceros/wiki/Troubleshooting
