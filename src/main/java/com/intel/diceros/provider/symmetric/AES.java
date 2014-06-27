@@ -629,6 +629,7 @@ public class AES {
 
     @Override
     public void configure(ConfigurableProvider provider) {
+      provider.addAlgorithm("Cipher.AES", PREFIX + "$CTR");
       provider.addAlgorithm("Cipher.AES/CTR", PREFIX + "$CTR");
       provider.addAlgorithm("Cipher.AES/CBC", PREFIX + "$CBC");
       provider.addAlgorithm("Cipher.AES/MBCBC", PREFIX + "$MBCBC");
