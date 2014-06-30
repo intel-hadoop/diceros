@@ -65,8 +65,11 @@ Software prerequisite:
 * `cd the diceros project directory`
 * `patch -p1 < patch(you download, https://github.com/intel-hadoop/diceros/blob/master/perf/perfWithJMH.patch)
 * `mvn install `
+
 performance testing usage:
+
 java -jar target/microbenchmarks.jar .*encryptPerfTest(or .*decryptPerfTest or *.cryptPerfTest -->test for both) 
+
 * -wi number of warmup iterations
 * -i number of benchmarked iterations, use 10 or more to get a good idea
 * -f How many times to forks a single benchmark
