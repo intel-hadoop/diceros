@@ -67,13 +67,13 @@ Software prerequisite:
 * `mvn install `
 performance testing usage:
 java -jar target/microbenchmarks.jar .*encryptPerfTest(or .*decryptPerfTest or *.cryptPerfTest -->test for both) 
--wi number of warmup iterations
--i number of benchmarked iterations, use 10 or more to get a good idea
--f How many times to forks a single benchmark
--p buffer_size=xxx(default 128)
--p sizeUnit=xx(default KB)
--p provider=xxx(default SunJCE)
--p mode=xxx(default AES/CTR/NoPadding)
--p directBuffer=xxx(default false)
+* -wi number of warmup iterations
+* -i number of benchmarked iterations, use 10 or more to get a good idea
+* -f How many times to forks a single benchmark
+* -p buffer_size=xxx(default 128)
+* -p sizeUnit=xx(default KB)
+* -p provider=xxx(default SunJCE)
+* -p mode=xxx(default AES/CTR/NoPadding)
+* -p directBuffer=xxx(default false)
 (see the performance testing detail from https://github.com/intel-hadoop/diceros/blob/master/perf/The%20Performance%20Testing%20of%20Diceros%26SunJCE.docx)
 
