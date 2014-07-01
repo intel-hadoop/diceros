@@ -22,7 +22,6 @@ import com.intel.diceros.provider.config.ConfigurableProvider;
 import com.intel.diceros.provider.util.AlgorithmProvider;
 
 import java.nio.ByteBuffer;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandomSpi;
 
 /**
@@ -57,11 +56,7 @@ public class SecureRandom {
     }
 
     public DRNG() {
-      try {
-        randomDefault = java.security.SecureRandom.getInstance("SHA1PRNG");
-      } catch (NoSuchAlgorithmException e) {
-
-      }
+      randomDefault = new java.security.SecureRandom();
     }
 
     /**
