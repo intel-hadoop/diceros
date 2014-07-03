@@ -26,6 +26,9 @@ https://github.com/intel-hadoop/diceros/wiki/Quick-Start
 ### Build
 `mvn package`
 
+### Sign the jar with keystore
+`mvn clean  package -DskipTests -Psign -Dkeystore.path={keystore path} -Dkeystore.alias={keystore.alias} -Dkeystore.password={keystore.password}`
+
 ### Download Binary Releases
 https://github.com/intel-hadoop/diceros/releases
 
