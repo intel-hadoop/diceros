@@ -1,8 +1,8 @@
 diff --git a/pom.xml b/pom.xml
-index 3bd6926..353dc39 100644
+index 7a1e84d..1cc3179 100644
 --- a/pom.xml
 +++ b/pom.xml
-@@ -37,7 +37,16 @@
+@@ -54,7 +54,16 @@
              <groupId>junit</groupId>
              <artifactId>junit</artifactId>
              <version>3.8.1</version>
@@ -20,20 +20,10 @@ index 3bd6926..353dc39 100644
          </dependency>
      </dependencies>
  
-@@ -57,7 +66,7 @@
-                 <plugins>
-                     <plugin>
-                         <artifactId>maven-compiler-plugin</artifactId>
--                        <version>2.5.1</version>
-+                        <version>3.0</version>
-                         <configuration>
-                             <source>${compileSource}</source>
-                             <target>${compileSource}</target>
-@@ -65,6 +74,27 @@
-                             <showDeprecation>false</showDeprecation>
-                         </configuration>
- 		    </plugin>
-+            <plugin>
+@@ -71,6 +80,27 @@
+                 </configuration>
+             </plugin>
+             <plugin>
 +                <groupId>org.apache.maven.plugins</groupId>
 +                <artifactId>maven-shade-plugin</artifactId>
 +                <version>2.0</version>
@@ -54,15 +44,16 @@ index 3bd6926..353dc39 100644
 +                    </execution>
 +                </executions>
 +            </plugin>
-   		    <plugin>
- 		        <groupId>org.codehaus.mojo</groupId>
-                         <artifactId>native-maven-plugin</artifactId>
++            <plugin>
+                 <groupId>org.codehaus.mojo</groupId>
+                 <artifactId>native-maven-plugin</artifactId>
+                 <version>1.0-alpha-7</version>
 diff --git a/src/main/java/com/intel/diceros/perf/AESPerfTestWithJMH.java b/src/main/java/com/intel/diceros/perf/AESPerfTestWithJMH.java
 new file mode 100644
-index 0000000..2eced8c
+index 0000000..8b1fb7c
 --- /dev/null
 +++ b/src/main/java/com/intel/diceros/perf/AESPerfTestWithJMH.java
-@@ -0,0 +1,226 @@
+@@ -0,0 +1,239 @@
 +/**
 + * Licensed to the Apache Software Foundation (ASF) under one
 + * or more contributor license agreements.  See the NOTICE file
@@ -84,12 +75,10 @@ index 0000000..2eced8c
 +package com.intel.diceros.perf;
 +
 +import java.nio.ByteBuffer;
-+import java.security.Key;
 +import java.security.SecureRandom;
 +import java.util.Arrays;
 +import java.util.HashMap;
 +import java.util.Map;
-+
 +import javax.crypto.BadPaddingException;
 +import javax.crypto.Cipher;
 +import javax.crypto.IllegalBlockSizeException;
@@ -104,37 +93,41 @@ index 0000000..2eced8c
 +import org.openjdk.jmh.annotations.State;
 +
 +/*
-+ * 
-+ * JMH is a Java harness for building, running, and analysing nano/micro/milli/macro 
++ *
++ * JMH is a Java harness for building, running, and analysing nano/micro/milli/macro
 + * benchmarks written in Java and other languages targetting the JVM.
 + * http://openjdk.java.net/projects/code-tools/jmh/
-+ * 
++ *
 + * ============================== HOW TO RUN THIS TEST: ====================================
 + * You can run this test with:
-+ * 
-+ * 
++ *
++ *
 + */
 +
 +@State(Scope.Benchmark)
 +public class AESPerfTestWithJMH {
 +  private static final SecureRandom rand = new SecureRandom();
-+  private static String[] SUN_JCE_MODES = { "AES/CTR/NoPadding","AES/CBC/NoPadding", "AES/CBC/PKCS5Padding" };
-+  private static String[] DICEROS_MODES = { "AES/CTR/NoPadding","AES/CBC/NoPadding", "AES/CBC/PKCS5Padding", "AES/MBCBC/PKCS5Padding" };
-+  private static Map<String, String[]> providerModes = new HashMap<String, String[]>();
++  private static String[] SUN_JCE_MODES =
++      {"AES/CTR/NoPadding", "AES/CBC/NoPadding", "AES/CBC/PKCS5Padding"};
++  private static String[] DICEROS_MODES =
++      {"AES/CTR/NoPadding", "AES/CBC/NoPadding", "AES/CBC/PKCS5Padding", "AES/MBCBC/PKCS5Padding"};
++  private static Map<String, String[]> providerModes =
++      new HashMap<String, String[]>();
++
 +  static {
 +    providerModes.put("SunJCE", SUN_JCE_MODES);
 +    providerModes.put("DC", DICEROS_MODES);
 +  }
-+  
++
 +  /*command line parameter set
-+   * 
++   *
 +   * usage: -p buffer_size=xxx(default 128)
 +   *        -p sizeUnit=xx(default KB)
 +   *        -p provider=xxx(default SunJCE)
 +   *        -p mode=xxx(default AES/CTR/NoPadding)
 +   *        -p directBuffer=xxx(default false)
 +   */
-+  
++
 +  @Param(value = "128")
 +  public int buffer_size;
 +  @Param(value = "KB")
@@ -145,61 +138,70 @@ index 0000000..2eced8c
 +  public String mode;
 +  @Param(value = "false")
 +  public boolean directBuffer = false;
-+  
-+  //byteArray encryption/decryption 
++
++  //byteArray encryption/decryption
 +  private byte[] inputByteArray;
 +  private byte[] encByteArray;
-+  private byte[] tmpByteArray; //byteArray for first encrypt and then used for decryption
++  private byte[] tmpByteArray;
++      //byteArray for first encrypt and then used for decryption
 +  private byte[] decByteArray;
-+  
++
 +  //byteBuffer encryption/decryption
 +  private ByteBuffer inputByteBuffer;
 +  private ByteBuffer encByteBuffer;
-+  private ByteBuffer tmpByteBuffer;//byteBuffer for first encrypt and then used for decryption
++  private ByteBuffer tmpByteBuffer;
++//byteBuffer for first encrypt and then used for decryption
 +  private ByteBuffer decByteBuffer;
-+  
++
 +  private Cipher enc;
 +  private Cipher dec;
-+  
++
 +  /*
 +   * 1.checkout the input argument. es: buffer_size, sizeUnit, provider and mode.
 +   *   usage: -p privoder=DC -p buffer_size = 1024 -p sizeUnit=KB -p mode = AES/CTR/NoPadding
-+   * 
++   *
 +   * 2.initialize the encryption and decryption cipher and alloc memory space for encrypt and decrypt result
-+   * 
++   *
 +   */
 +  @Setup
-+  public void setup() throws Exception{
++  public void setup() throws Exception {
 +    checkArgument();
-+    System.out.println("Initialising test data : [INPUT_BUFFER_SIZE = " + String.format("%d", buffer_size) + sizeUnit + "]");
++    System.out.println("Initialising test data : [INPUT_BUFFER_SIZE = " + String
++        .format("%d", buffer_size) + sizeUnit + "]");
 +    initialize();
 +  }
++
 +  private void checkArgument() {
 +    if (!providerModes.containsKey(provider)) {
 +      throw new IllegalArgumentException(
-+          "the provider parameter is not correct set. the value must be " + providerModes.keySet());
++          "the provider parameter is not correct set. the value must be " + providerModes
++              .keySet());
 +    }
 +    if (!Arrays.asList(providerModes.get(provider)).contains(mode)) {
-+      throw new IllegalArgumentException("the mode parameter is not correct set. the value must be " + Arrays.asList(providerModes.get(provider)));
++      throw new IllegalArgumentException(
++          "the mode parameter is not correct set. the value must be " + Arrays
++              .asList(providerModes.get(provider)));
 +    }
 +    if (!sizeUnit.equals("KB") && !sizeUnit.equals("B")) {
 +      throw new IllegalArgumentException("sizeUnit parameter must be KB or B");
 +    }
 +  }
++
 +  private void initialize() throws Exception {
 +    byte[] key;
 +    byte[] iv;
 +    //random generate the key and iv for cipher
 +    key = new byte[16];
-+    iv  = new byte[16];
++    iv = new byte[16];
 +    rand.nextBytes(key);
 +    rand.nextBytes(iv);
-+    
++
 +    //intialize for the test data
-+    final int INPUT_BUFFER_SIZE = (sizeUnit.equals("KB") ? 1024 * buffer_size : buffer_size);
++    final int INPUT_BUFFER_SIZE =
++        (sizeUnit.equals("KB") ? 1024 * buffer_size : buffer_size);
 +    inputByteArray = new byte[INPUT_BUFFER_SIZE];
 +    rand.nextBytes(inputByteArray);
-+    
++
 +    //calc the memory space for encryption/decryption according to the cipher mode
 +    int encryptResultSize = INPUT_BUFFER_SIZE;
 +    int decryptResultSize = INPUT_BUFFER_SIZE;
@@ -207,17 +209,20 @@ index 0000000..2eced8c
 +      encryptResultSize = INPUT_BUFFER_SIZE + 16 - (INPUT_BUFFER_SIZE % 16);
 +      decryptResultSize = INPUT_BUFFER_SIZE + 16 - (INPUT_BUFFER_SIZE % 16);
 +    }
-+ 
++
 +    //initialize the cipher for encrypt or decrypt
 +    try {
 +      enc = Cipher.getInstance(this.mode, this.provider);
 +      dec = Cipher.getInstance(this.mode, this.provider);
-+      enc.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(iv));
-+      dec.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(iv));
++      enc.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"),
++          new IvParameterSpec(iv));
++      dec.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"),
++          new IvParameterSpec(iv));
 +    } catch (Exception e) {
-+      throw new RuntimeException("AES failed initialisation - " + e.toString(), e);
++      throw new RuntimeException("AES failed initialisation - " + e.toString(),
++          e);
 +    }
-+    
++
 +    //check whether use ByteArray or ByteBuffer
 +    if (directBuffer) {
 +      inputByteBuffer = ByteBuffer.allocateDirect(INPUT_BUFFER_SIZE);
@@ -226,7 +231,7 @@ index 0000000..2eced8c
 +      encByteBuffer = ByteBuffer.allocateDirect(encryptResultSize);
 +      decByteBuffer = ByteBuffer.allocateDirect(decryptResultSize);
 +      tmpByteBuffer = ByteBuffer.allocateDirect(encryptResultSize);
-+      
++
 +      //encrypt the data for decrypt performance test
 +      enc.doFinal(inputByteBuffer, tmpByteBuffer);
 +      inputByteBuffer.flip();
@@ -236,29 +241,28 @@ index 0000000..2eced8c
 +      encByteArray = new byte[encryptResultSize];
 +      decByteArray = new byte[decryptResultSize];
 +      tmpByteArray = new byte[encryptResultSize];
-+      
-+    //encrypt the data for decrypt performance test
++
++      //encrypt the data for decrypt performance test
 +      enc.doFinal(inputByteArray, 0, inputByteArray.length, tmpByteArray);
 +    }
-+    
++
 +    System.out.println("======");
-+    System.out.println("Testing " + enc.getAlgorithm() + " "
-+        + enc.getBlockSize() * 8 + " " + "provider:" + provider + " mode:"
-+        + mode + (directBuffer ? " directBuffer" : " ByteArray"));
++    System.out.println("Testing " + enc.getAlgorithm() + " " + enc
++        .getBlockSize() * 8 + " " + "provider:" + provider + " mode:" + mode + (
++        directBuffer ? " directBuffer" : " ByteArray"));
 +  }
-+  
-+  private void testCipher(Cipher cipher, byte[] input, byte[] output)
-+      throws ShortBufferException, IllegalBlockSizeException,
-+      BadPaddingException {
++
++  private void testCipher(Cipher cipher, byte[] input, byte[] output) throws
++      ShortBufferException, IllegalBlockSizeException, BadPaddingException {
 +    cipher.doFinal(input, 0, input.length, output, 0);
 +  }
 +
-+  private void testCipher(Cipher cipher, ByteBuffer input, ByteBuffer output)
-+      throws ShortBufferException, IllegalBlockSizeException,
-+      BadPaddingException {
++  private void testCipher(Cipher cipher, ByteBuffer input,
++                          ByteBuffer output) throws ShortBufferException,
++      IllegalBlockSizeException, BadPaddingException {
 +    cipher.doFinal(input, output);
 +  }
-+  
++
 +  @GenerateMicroBenchmark
 +  public void encryptPerfTest() throws Exception {
 +    if (directBuffer) {
@@ -271,21 +275,21 @@ index 0000000..2eced8c
 +      encByteBuffer.flip();
 +      encByteBuffer.limit(encByteBuffer.capacity());
 +    } else {
-+      
++
 +      testCipher(enc, inputByteArray, encByteArray);
 +    }
 +  }
 +
 +  @GenerateMicroBenchmark
 +  public void decryptPerfTest() throws Exception {
-+    if(directBuffer){
++    if (directBuffer) {
 +      testCipher(dec, tmpByteBuffer, decByteBuffer);
 +      tmpByteBuffer.flip();
 +      tmpByteBuffer.limit(tmpByteBuffer.capacity());
 +      decByteBuffer.flip();
 +      decByteBuffer.limit(decByteBuffer.capacity());
-+    }else{
-+      testCipher(dec,tmpByteArray,decByteArray);
++    } else {
++      testCipher(dec, tmpByteArray, decByteArray);
 +    }
 +  }
 +}
