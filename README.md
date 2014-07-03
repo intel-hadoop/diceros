@@ -63,7 +63,7 @@ from http://openjdk.java.net/projects/code-tools/jmh/)
 Software prerequisite:
 * apply the performance path to diceros project. the patch address is xxx, using the following command:
 * `cd the diceros project directory`
-* `patch -p1 < patch(you download, https://github.com/intel-hadoop/diceros/blob/master/perf/perfWithJMH.patch)
+* `patch -p1 < perf/perfWithJMH.patch
 * `mvn install `
 
 performance testing usage:
