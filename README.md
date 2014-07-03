@@ -26,6 +26,9 @@ https://github.com/intel-hadoop/diceros/wiki/Quick-Start
 ### Build
 `mvn package`
 
+### Build RPM
+`mvn package -Drpm.install.prefix.default={default install path, should point to your jre home, for example: /usr/java/default/jre}`
+
 ### Sign the diceros jar file with keystore
 `mvn clean  package -DskipTests -Psign -Dkeystore.path={keystore path} -Dkeystore.alias={keystore.alias} -Dkeystore.password={keystore.password}`
 
@@ -39,6 +42,9 @@ Add line `security.provider.10=com.intel.diceros.provider.DicerosProvider` in fi
 #### Dynamic deploy:
 Add the following line `Security.addProvider(new com.intel.diceros.provider.DicerosProvider());`
 before calling method `SecureRandom.getInstace()` or `Cipher.getInstance()`.
+
+#### Deploy using rpm:
+rpm -ivh diceros-version.rpm --prefix={your jre home, for example: /usr/java/default/jre}
 
 ### Unlimited Strength Jurisdiction Policy Files
 If you want to use 256B as key length, you should replace file "local_policy.jar" and "US_export_policy.jar" in dir 
