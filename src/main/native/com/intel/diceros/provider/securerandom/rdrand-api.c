@@ -5,6 +5,8 @@
 #include <openssl/engine.h>
 #include <openssl/crypto.h>
 #include <pthread.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 
 #include "rdrand-api.h"
 
@@ -23,7 +25,7 @@ static void lock_callback(int mode, int type, char *file, int line) {
 static unsigned long thread_id(void) {
   unsigned long ret;
 
-  ret=(unsigned long)pthread_self();
+  ret=(unsigned long)syscall(SYS_gettid);
   return(ret);
 }
 
@@ -67,7 +69,7 @@ int drngInit() {
     if (NULL == eng) {
       /*fprintf(stderr, "ENGINE_load_rdrand failed, err = 0x%lx\n",
           ERR_get_error());*/
-      ret = -1;
+      ret = 0;
       break;
     } else {
       int rc = ENGINE_set_default(eng, ENGINE_METHOD_RAND);
