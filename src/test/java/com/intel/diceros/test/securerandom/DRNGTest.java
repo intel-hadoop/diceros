@@ -461,7 +461,7 @@ public class DRNGTest extends BaseBlockCipherTest {
 
         FastFourierTransformer fft = new FastFourierTransformer(DftNormalization.STANDARD);
         Complex[] Xc = fft.transform(X, TransformType.FORWARD);
-        m[0] = Math.sqrt((Xc[0].multiply(Xc[0])).getReal());
+        m[0] = Math.sqrt(Xc[0].getReal() * Xc[0].getReal());
 
         for (i = 0; i < n / 2; i++)
             m[i + 1] = Math.sqrt(
