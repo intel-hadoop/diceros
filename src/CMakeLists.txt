@@ -169,7 +169,7 @@ target_link_dual_libraries(diceros
     ${JAVA_JVM_LIBRARY}
     ${CRYPTO_LIBRARY}
 )
-SET(LIBDICEROS_VERSION "1.2.1")
+SET(LIBDICEROS_VERSION "1.2.2")
 SET_TARGET_PROPERTIES(diceros PROPERTIES
     SOVERSION ${LIBDICEROS_VERSION})
 dual_output_directory(diceros target/usr/local/lib)
