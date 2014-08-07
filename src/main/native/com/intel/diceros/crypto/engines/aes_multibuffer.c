@@ -467,6 +467,9 @@ void opensslResetContextMB(int forEncryption, EVP_CIPHER_CTX* context,
   if (keyLength == 32) {
     cryptInitFunc(context, EVP_aes_256_cbc(), NULL,
         (unsigned char *) nativeKey, (unsigned char *) nativeIv);
+  } else if (keyLength == 24) {
+    cryptInitFunc(context, EVP_aes_192_cbc(), NULL,
+        (unsigned char *) nativeKey, (unsigned char *) nativeIv);
   } else if (keyLength == 16) {
     cryptInitFunc(context, EVP_aes_128_cbc(), NULL,
         (unsigned char *) nativeKey, (unsigned char *) nativeIv);

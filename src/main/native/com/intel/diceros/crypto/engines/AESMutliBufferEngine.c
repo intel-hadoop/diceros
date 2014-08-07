@@ -52,6 +52,10 @@ JNIEXPORT jlong JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngi
   (*env)->GetByteArrayRegion(env, key, 0, keyLength, nativeKey);
   (*env)->GetByteArrayRegion(env, iv, 0, ivLength, nativeIv);
 
+  if (keyLength != 32 && keyLength != 24 && keyLength != 16) {
+    THROW(env, "java/lang/IllegalArgumentException", "Illegal key size");
+  }
+
   int loadLibraryResult = 0;
   long ctx = init(forEncryption, nativeKey, keyLength, nativeIv, ivLength, padding , oldContext, &loadLibraryResult);
   if (loadLibraryResult == -1) {

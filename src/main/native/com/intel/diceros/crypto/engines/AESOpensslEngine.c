@@ -85,17 +85,27 @@ JNIEXPORT jlong JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_i
     if (cipherCtx->keyLength == 32) {
       cryptInitFunc(cipherCtx->opensslCtx, EVP_aes_256_ctr(), NULL,
           (unsigned char *) cipherCtx->key, (unsigned char *) cipherCtx->iv);
-    } else {
+    } else if (cipherCtx->keyLength == 24) {
+      cryptInitFunc(cipherCtx->opensslCtx, EVP_aes_192_ctr(), NULL,
+          (unsigned char *) cipherCtx->key, (unsigned char *) cipherCtx->iv);
+    } else if (cipherCtx->keyLength == 16) {
       cryptInitFunc(cipherCtx->opensslCtx, EVP_aes_128_ctr(), NULL,
           (unsigned char *) cipherCtx->key, (unsigned char *) cipherCtx->iv);
+    } else {
+      THROW(env, "java/lang/IllegalArgumentException", "Illegal key size");
     }
   } else if (mode == MODE_CBC) {
     if (cipherCtx->keyLength == 32) {
       cryptInitFunc(cipherCtx->opensslCtx, EVP_aes_256_cbc(), NULL,
           (unsigned char *) cipherCtx->key, (unsigned char *) cipherCtx->iv);
-    } else {
+    } else if (cipherCtx->keyLength == 24) {
+      cryptInitFunc(cipherCtx->opensslCtx, EVP_aes_192_cbc(), NULL,
+          (unsigned char *) cipherCtx->key, (unsigned char *) cipherCtx->iv);
+    } else if (cipherCtx->keyLength == 16) {
       cryptInitFunc(cipherCtx->opensslCtx, EVP_aes_128_cbc(), NULL,
           (unsigned char *) cipherCtx->key, (unsigned char *) cipherCtx->iv);
+    } else {
+      THROW(env, "java/lang/IllegalArgumentException", "Illegal key size");
     }
   }
 
