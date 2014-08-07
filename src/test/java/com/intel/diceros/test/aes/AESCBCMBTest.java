@@ -83,12 +83,9 @@ public class AESCBCMBTest extends AESAbstarctTest {
     // encryption pass
     //
     byte[] encrytion = new byte[input.length + 16 + 2];
-    out.doFinal(input, 0, input.length, encrytion, 0);
-    if (encrytion.length != input.length + 16 + 2) {
-      fail("AES failed encryption - ");
-    }
+    int encryptLen = out.doFinal(input, 0, input.length, encrytion, 0);
 
-    byte[] decrytion = in.doFinal(encrytion, 0, encrytion.length);
+    byte[] decrytion = in.doFinal(encrytion, 0, encryptLen);
 
     if (!Arrays.areEqual(decrytion, input)) {
       fail("AES failed decryption");

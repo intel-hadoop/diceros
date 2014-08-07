@@ -17,6 +17,7 @@
  */
 #include <openssl/evp.h>
 #include <openssl/err.h>
+#include <cpuid.h>
 #include <dlfcn.h>
 #include <string.h>
 #include <stdio.h>
@@ -30,6 +31,205 @@ void cleanDLError() {
   dlerror();
 }
 
+static EncryptX8 encrypt(void* handle, int keyLength)
+{
+  if (NULL == handle) {
+    return NULL;
+  }
+
+  static EncryptX8 X8128 = NULL;
+  static EncryptX8 X8192 = NULL;
+  static EncryptX8 X8256 = NULL;
+
+  EncryptX8 result = NULL;
+  char* funcName = NULL;
+
+  switch (keyLength) {
+  case 16:
+    funcName = "aes_cbc_enc_128_x8";
+    if (NULL == X8128) {
+      X8128 = dlsym(handle, funcName);
+    }
+    result = X8128;
+    break;
+  case 24:
+    funcName = "aes_cbc_enc_192_x8";
+    if (NULL == X8192) {
+      X8192 = dlsym(handle, funcName);
+    }
+    result = X8192;
+    break;
+  case 32:
+    funcName = "aes_cbc_enc_256_x8";
+    if (NULL == X8256) {
+      X8256 = dlsym(handle, funcName);
+    }
+    result = X8256;
+    break;
+  default:
+    result = NULL;
+    break;
+  }
+
+  if (NULL == result) {
+    DTRACE("invalid key length %d or symbol %s\n", keyLength, funcName);
+  }
+
+  return result;
+}
+
+static DecryptX1 decrypt(void* handle, int keyLength)
+{
+  if (NULL == handle) {
+    return NULL;
+  }
+
+  static DecryptX1 X1128 = NULL;
+  static DecryptX1 X1192 = NULL;
+  static DecryptX1 X1256 = NULL;
+
+
+  DecryptX1 result = NULL;
+  char* funcName = NULL;
+
+  switch (keyLength) {
+  case 16:
+    funcName = "iDec128_CBC_by8";
+    if (NULL == X1128) {
+      X1128 = dlsym(handle, funcName);
+    }
+    result = X1128;
+    break;
+  case 24:
+    funcName = "iDec192_CBC_by8";
+    if (NULL == X1192) {
+      X1192 = dlsym(handle, funcName);
+    }
+    result = X1192;
+    break;
+  case 32:
+    funcName = "iDec256_CBC_by8";
+    if (NULL == X1256) {
+      X1256 = dlsym(handle, funcName);
+    }
+    result = X1256;
+    break;
+  default:
+    result = NULL;
+    break;
+  }
+
+  if (NULL == result) {
+    DTRACE("invalid key length %d or symbol %s\n", keyLength, funcName);
+  }
+  return result ;
+}
+
+// mode: 1 for encrypt, 0 for decrypt
+static KeySched keyexp(void* handle, int keyLength, int mode) {
+  if (NULL == handle) {
+    return NULL;
+  }
+
+  static KeySched EncKeyExp128 = NULL;
+  static KeySched EncKeyExp192 = NULL;
+  static KeySched EncKeyExp256 = NULL;
+
+  static KeySched DecKeyExp128 = NULL;
+  static KeySched DecKeyExp192 = NULL;
+  static KeySched DecKeyExp256 = NULL;
+
+  KeySched result = NULL;
+  char* funcName = NULL;
+
+  switch (keyLength + mode) {
+  case 16:
+    funcName = "aes_keyexp_128_dec";
+    if (NULL == DecKeyExp128) {
+      DecKeyExp128 = dlsym(handle, funcName);
+    }
+    result = DecKeyExp128;
+    break;
+  case 24:
+    funcName = "aes_keyexp_192_dec";
+    if (NULL == DecKeyExp192) {
+      DecKeyExp192 = dlsym(handle, funcName);
+    }
+    result = DecKeyExp192;
+    break;
+  case 32:
+    funcName = "aes_keyexp_256_dec";
+    if (NULL == DecKeyExp256) {
+      DecKeyExp256 = dlsym(handle, funcName);
+    }
+    result = DecKeyExp256;
+    break;
+  case 16 + 1:
+    funcName = "aes_keyexp_128_enc";
+    if (NULL == EncKeyExp128) {
+      EncKeyExp128 = dlsym(handle, funcName);
+    }
+    result = EncKeyExp128;
+    break;
+  case 24 + 1:
+    funcName = "aes_keyexp_192_enc";
+    if (NULL == EncKeyExp192) {
+      EncKeyExp192 = dlsym(handle, funcName);
+    }
+    result = EncKeyExp192;
+    break;
+  case 32 + 1:
+    funcName = "aes_keyexp_256_enc";
+    if (NULL == EncKeyExp256) {
+      EncKeyExp256 = dlsym(handle, funcName);
+    }
+    result = EncKeyExp256;
+    break;
+  default:
+    result = NULL;
+    break;
+  }
+
+  if (NULL == result) {
+    DTRACE("invalid key length %d or symbol %s\n", keyLength, funcName);
+  }
+  return result ;
+}
+
+int aesni_supported() {
+  int a, b, c, d;
+  __cpuid(1, a, b, c, d);
+
+  return (c >> 25) & 1;
+}
+
+int aesmb_keyexp(CipherContext* ctx) {
+  if (NULL == ctx || NULL == ctx->aesmbCtx || NULL == ctx->aesmbCtx->handle) {
+    DTRACE("Invalid parameter: ctx or key or iv is NULL!");
+    return -1;
+  }
+
+  void* handle = ctx->aesmbCtx->handle;
+
+  KeySched keySchedFunc = NULL;
+  // init encryption key expension
+  keySchedFunc = keyexp(handle, ctx->keyLength, 1);
+  if (NULL == keySchedFunc) {
+    DTRACE("Invalid parameter: key length(%d) is not supported", keyLength);
+    return -2;
+  }
+  keySchedFunc(ctx->key, ctx->aesmbCtx->encryptKeysched);
+  // init decryption key expension
+  keySchedFunc = keyexp(handle, ctx->keyLength, 0);
+  if (NULL == keySchedFunc) {
+    DTRACE("Invalid parameter: key length(%d) is not supported", keyLength);
+    return -2;
+  }
+  keySchedFunc(ctx->key, ctx->aesmbCtx->decryptKeysched);
+
+  return 0;
+}
+
 int aesmb_keyinit(CipherContext* ctx, uint8_t* key, int keyLength) {
   if (NULL == key || NULL == ctx) {
     return 0;
@@ -39,10 +239,23 @@ int aesmb_keyinit(CipherContext* ctx, uint8_t* key, int keyLength) {
     free(ctx->key);
     ctx->keyLength = keyLength;
     ctx->key = (uint8_t*) malloc (keyLength * sizeof(uint8_t));
+
+    ctx->aesmbCtx->efunc = encrypt(ctx->aesmbCtx->handle, keyLength);
+    ctx->aesmbCtx->dfunc = decrypt(ctx->aesmbCtx->handle, keyLength);
   }
 
   memcpy(ctx->key, key, keyLength);
-  return 0;
+
+  if (NULL == ctx->aesmbCtx->efunc || NULL == ctx->aesmbCtx->dfunc) {
+    DTRACE("Invalid parameter: key length(%d) is not supported", keyLength);
+    return -3;
+  }
+
+  if (!aesni_supported()) {
+    return -4;
+  }
+
+  return aesmb_keyexp(ctx);
 }
 
 int aesmb_ivinit(CipherContext* ctx, uint8_t* iv, int ivLength) {
@@ -80,6 +293,7 @@ int aesmb_keyivinit(CipherContext* ctx, uint8_t* key, int keyLength, uint8_t* iv
 }
 
 int aesmb_ctxinit(CipherContext* ctx,
+              void* handle,
               uint8_t* key,
               uint8_t  keyLength,
               uint8_t* iv,
@@ -96,6 +310,7 @@ int aesmb_ctxinit(CipherContext* ctx,
     return -2;
   }
 
+  ctx->aesmbCtx->handle = handle;
   return aesmb_keyivinit(ctx, key, keyLength, iv, ivLength);
 }
 
@@ -105,14 +320,102 @@ int aesmb_streamlength(int inputLength) {
   return BLOCKSIZE * mbBlocks;
 }
 
-CipherContext* createCipherContextMB(signed char* key, int keylen, signed char* iv, int ivlen) {
+int aesmb_encrypt(CipherContext* ctx,
+              uint8_t* input,
+              int inputLength,
+              uint8_t* output,
+              int* outputLength
+              )
+{
+  if (NULL == ctx || NULL == input || NULL == output || inputLength < 0 ) {
+    DTRACE("Invalid parameter: ctx or input or output is NULL!");
+    return -1;
+  }
+
+  int mbUnit = PARALLEL_LEVEL * BLOCKSIZE;
+  int mbBlocks = inputLength / mbUnit;
+  int mbTotal = inputLength - inputLength % mbUnit;
+  *outputLength = mbTotal;
+
+  if (mbBlocks == 0) {
+    return *outputLength;
+  }
+
+  sAesData_x8 data;
+  data.keysched = ctx->aesmbCtx->encryptKeysched;
+  data.numblocks = mbBlocks;
+
+  // init iv
+  uint8_t iv[PARALLEL_LEVEL*BLOCKSIZE];
+  memcpy(iv, ctx->iv, PARALLEL_LEVEL*BLOCKSIZE);
+
+  int i;
+  for (i =0; i < PARALLEL_LEVEL; i++) {
+    int step = i * BLOCKSIZE * mbBlocks;
+    data.inbuf[i] = input + step;
+    data.outbuf[i] = output + step;
+    data.iv[i] = iv + i*BLOCKSIZE;
+  }
+
+  (ctx->aesmbCtx->efunc) (&data); // encrypt in parallel
+
+  return *outputLength;
+}
+
+int aesmb_decrypt(CipherContext* ctx,
+              uint8_t* input,
+              int inputLength,
+              uint8_t* output,
+              int* outputLength
+              )
+{
+  if (NULL == ctx || NULL == input || NULL == output || inputLength < 0 ) {
+    DTRACE("Invalid parameter: ctx or input or output is NULL!");
+    return -1;
+  }
+
+  int mbUnit = BLOCKSIZE * PARALLEL_LEVEL;
+  int mbBlocks = inputLength / mbUnit;
+  int mbTotal = inputLength - inputLength % mbUnit;
+  *outputLength = mbTotal;
+
+  if (mbBlocks == 0) {
+    return *outputLength;
+  }
+
+  sAesData data;
+  data.keysched = ctx->aesmbCtx->decryptKeysched;
+  data.numblocks = mbBlocks;
+
+  // init iv
+  uint8_t iv[PARALLEL_LEVEL*BLOCKSIZE];
+  memcpy(iv, ctx->iv, PARALLEL_LEVEL*BLOCKSIZE);
+
+  int i;
+  for (i =0; i < PARALLEL_LEVEL; i++) {
+    int step = i * BLOCKSIZE * mbBlocks;
+    data.inbuf = input + step;
+    data.outbuf = output + step;
+    data.iv = iv + i*BLOCKSIZE;
+    (ctx->aesmbCtx->dfunc)(&data); // decrypt by each stream
+  }
+
+  return *outputLength;
+}
+
+CipherContext* createCipherContextMB(void* handle, signed char* key, int keylen, signed char* iv, int ivlen) {
   CipherContext* ctx = (CipherContext*) malloc(sizeof(CipherContext));
   memset(ctx, 0, sizeof(CipherContext));
 
   ctx->opensslCtx = (EVP_CIPHER_CTX*) malloc(sizeof(EVP_CIPHER_CTX));
-  // init iv and key
-  aesmb_ctxinit(ctx, (uint8_t*)key, keylen, (uint8_t*)iv, ivlen);
 
+  ctx->aesmbCtx = (sAesContext*) malloc(sizeof(sAesContext));
+  memset(ctx->aesmbCtx, 0, sizeof(sAesContext));
+
+  // init iv and key
+  int result = aesmb_ctxinit(ctx, handle, (uint8_t*)key, keylen, (uint8_t*)iv, ivlen);
+
+  ctx->aesmbCtx->aesEnabled = aesni_supported() && result == 0;
   return ctx;
 }
 
@@ -124,6 +427,12 @@ long init(int forEncryption, signed char* nativeKey, int keyLength, signed char*
     return 0;
   }
 
+  // load libaesmb.so, if error, print debug message
+  void* handle = loadLibrary(HADOOP_AESMB_LIBRARY);
+  if (NULL == handle) {
+    *loadLibraryResult = -2;
+  }
+
   // cleanup error
   cleanDLError();
 
@@ -132,7 +441,7 @@ long init(int forEncryption, signed char* nativeKey, int keyLength, signed char*
   }
 
   // init all context
-  CipherContext* ctx = createCipherContextMB(nativeKey, keyLength, nativeIv, ivLength);
+  CipherContext* ctx = createCipherContextMB(handle, nativeKey, keyLength, nativeIv, ivLength);
   // init openssl context, by using localized key & iv
   EVP_CIPHER_CTX_init(ctx->opensslCtx);
   opensslResetContext(forEncryption, ctx->opensslCtx, ctx);
@@ -214,6 +523,9 @@ int opensslDecrypt(EVP_CIPHER_CTX* ctx, unsigned char* output, int* outLength, u
 
 int bufferCrypt(CipherContext* cipherContext, const char* input, int inputLength, char* output) {
   EVP_CIPHER_CTX * ctx = (EVP_CIPHER_CTX *)cipherContext->opensslCtx;
+  sAesContext* aesCtx = (sAesContext*) cipherContext->aesmbCtx;
+  int aesEnabled = aesCtx->aesEnabled;
+  int aesmbApplied = 0; // 0 for not applied
 
   int outLength = 0;
   int outLengthFinal = 0;
@@ -231,32 +543,64 @@ int bufferCrypt(CipherContext* cipherContext, const char* input, int inputLength
   }
 
   if (ctx->encrypt == ENCRYPTION) {
+    if (aesEnabled) {
+      // try to apply multi-buffer optimization
+      int encrypted = aesmb_encrypt(cipherContext, input, inputLength, output, &outLength);
+      if (encrypted < 0) {
+      // reportError(env, "AES multi-buffer encryption failed.");
+        return 0;
+      }
+      aesmbApplied = encrypted;
+      input += encrypted;
+      inputLength -=encrypted;
+      output +=outLength; // rest of data will use openssl to perform encryption
+    }
+
     // encrypt with padding
     EVP_CIPHER_CTX_set_padding(ctx, 1);
     // encrypt the rest
     opensslEncrypt(ctx, output, &outLengthFinal, input, inputLength);
 
-    header[0] = 0;
-    header[1] = 0;
+    if (aesmbApplied) {
+      header[0] = 1; // enabled
+      header[1] = outLengthFinal - inputLength; // padding
+    } else {
+      header[0] = 0;
+      header[1] = 0;
+    }
   } else {
     // read custom header
     if (header[0]) {
       int padding = (int) header[1];
-      int step = aesmb_streamlength(inputLength - padding);
-      outLength = 0;
-      int i;
-      for (i = 0; i < PARALLEL_LEVEL; i++) {
-        //reset open ssl context
-        opensslResetContextMB(ctx->encrypt, ctx, cipherContext, i);
-        //clear padding, since multi-buffer AES did not have padding
-        EVP_CIPHER_CTX_set_padding(ctx, 0);
-        //decrypt using open ssl
-        opensslDecrypt(ctx, output, &outLengthFinal, input, step);
+      if (aesEnabled) {
+        int decrypted = aesmb_decrypt(cipherContext, input, inputLength - padding, output, &outLengthFinal);
+        if (decrypted < 0) {
+        // todo?
+        // reportError(env, "Data can not be decrypted correctly");
+          return 0;
+        }
 
-        input += step;
-        inputLength -= step;
+        input += outLengthFinal;
+        inputLength -= outLengthFinal;
         output += outLengthFinal;
         outLength += outLengthFinal;
+      } else {
+        int step = aesmb_streamlength(inputLength - padding);
+        outLength = 0;
+        int i;
+        for (i = 0; i < PARALLEL_LEVEL; i++) {
+          //reset open ssl context
+          opensslResetContextMB(ctx->encrypt, ctx, cipherContext, i);
+          //clear padding, since multi-buffer AES did not have padding
+          EVP_CIPHER_CTX_set_padding(ctx, 0);
+          //decrypt using open ssl
+          opensslDecrypt(ctx, output, &outLengthFinal, input, step);
+
+          input += step;
+          inputLength -= step;
+          output += outLengthFinal;
+          outLength += outLengthFinal;
+        }
       }
     }
 

@@ -35,7 +35,7 @@ public class AESMutliBufferEngine implements BlockCipher {
   private byte[] IV;
   private int head = 2;
   CipherParameters params = null;
-  private long context = 0; // context used by openssl
+  private long aesContext = 0; // context used by openssl
 
   public AESMutliBufferEngine(int mode) {
     this.mode = mode;
@@ -52,7 +52,7 @@ public class AESMutliBufferEngine implements BlockCipher {
     if (params instanceof KeyParameter) {
       this.forEncryption = forEncryption;
       this.params = params;
-      context = init(forEncryption, ((KeyParameter) params).getKey(), IV, padding, context);
+      aesContext = init(forEncryption, ((KeyParameter) params).getKey(), IV, padding, aesContext);
     } else {
       throw new IllegalArgumentException(
               "invalid parameter passed to AES init - "
@@ -73,7 +73,8 @@ public class AESMutliBufferEngine implements BlockCipher {
   @Override
   public int processBlock(byte[] in, int inOff, int inLen, byte[] out,
       int outOff) throws DataLengthException, IllegalStateException {
-    return processBlock(context, in, inOff, inLen, out, outOff);
+    checkCipherInit();
+    return processBlock(aesContext, in, inOff, inLen, out, outOff);
   }
 
   @Override
@@ -83,7 +84,19 @@ public class AESMutliBufferEngine implements BlockCipher {
 
   @Override
   public void reset() {
-    init(forEncryption, params);
+    if (aesContext != 0) {
+      destoryCipherContext(aesContext);
+      aesContext = 0;
+    }
+  }
+
+  @Override
+  protected void finalize() throws Throwable {
+    try {
+      reset();
+    } finally {
+      super.finalize();
+    }
   }
 
   @Override
@@ -91,7 +104,8 @@ public class AESMutliBufferEngine implements BlockCipher {
     if (isUpdate) {
       throw new UnsupportedOperationException("Mutli Buffer don't support the update method.");
     }
-    return bufferCrypt(context, input, input.position(), input.limit()-input.position(), output,
+    checkCipherInit();
+    return bufferCrypt(aesContext, input, input.position(), input.limit()-input.position(), output,
             output.position(), isUpdate);
   }
 
@@ -101,7 +115,9 @@ public class AESMutliBufferEngine implements BlockCipher {
   protected native long init(boolean forEncryption, byte[] key, byte[] iv, int padding, long oldContext);
 
   private native int processBlock(long context, byte[] in, int inOff, int inLen, byte[] out, int outOff);
-  
+
+  private native int destoryCipherContext(long context);
+
   @Override
   public void setIV(byte[] IV) {
     this.IV = IV;
@@ -125,5 +141,11 @@ public class AESMutliBufferEngine implements BlockCipher {
   @Override
   public int getHeadLength() {
     return this.head;
+  }
+
+  private void checkCipherInit() {
+    if (aesContext == 0) {
+      init(forEncryption, params);
+    }
   }
 }

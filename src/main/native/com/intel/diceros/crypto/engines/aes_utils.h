@@ -20,6 +20,7 @@
 #define __AES_UTILS_H
 
 #include <stdlib.h>
+#include <aes_api.h>
 #include <openssl/evp.h>
 #include <stdint.h>
 
@@ -41,12 +42,26 @@
 #define PADDING_NOPADDING 0
 #define PADDING_PKCS5PADDING 1
 
-typedef struct _CipherContext{
+typedef void (*EncryptX8)(sAesData_x8* data);
+typedef void (*DecryptX1)(sAesData* data);
+typedef void (*KeySched)(uint8_t *key, uint8_t *enc_exp_keys);
+
+typedef struct _sAesContext {
+  void* handle;
+  uint8_t encryptKeysched[16*15];
+  uint8_t decryptKeysched[16*15];
+  EncryptX8 efunc;
+  DecryptX1 dfunc;
+  int aesEnabled;
+} sAesContext;
+
+typedef struct _CipherContext {
   EVP_CIPHER_CTX* opensslCtx;
   uint8_t* key;
   uint8_t  keyLength;
   uint8_t* iv;
   uint8_t  ivLength;
+  sAesContext* aesmbCtx;
 } CipherContext;
 
 void* loadLibrary(const char* libname);

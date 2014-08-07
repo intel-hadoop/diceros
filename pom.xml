@@ -37,6 +37,10 @@
         <bundle.crypto>false</bundle.crypto>
         <require.crypto>true</require.crypto>
 
+        <!-- used by AES-NI CBC Multi-Buffer -->
+        <yasm.prefix></yasm.prefix>
+        <require.aesmb>true</require.aesmb>
+
         <!-- used to specify the default install prefix of the rpm package -->
         <rpm.install.prefix.default>/usr/java/latest/jre</rpm.install.prefix.default>
 
@@ -114,9 +118,19 @@
                         </goals>
                         <configuration>
                             <target>
+                                <copy todir="${project.build.directory}/native/aesmb/">
+                                    <fileset dir="src/main/native/aesmb/">
+                                        <exclude name='**/*svn' />
+                                    </fileset>
+                                </copy>
+                                <exec executable="make" dir="${project.build.directory}/native/aesmb/"
+                                      failonerror="true">
+                                    <arg line="YASM_BIN=${yasm.prefix}/yasm"/>
+                                </exec>
+                                <copy file="${project.build.directory}/native/aesmb/libaesmb.so" tofile="${project.build.directory}/native/target/usr/local/lib/libaesmb.so"/>
                                 <exec executable="cmake" dir="${project.build.directory}/native"
                                       failonerror="true">
-                                    <arg line="${basedir}/src/ -DGENERATED_JAVAH=${project.build.directory}/native/javah -DJVM_ARCH_DATA_MODEL=${sun.arch.data.model} -DREQUIRE_CRYPTO=${require.crypto} -DCUSTOM_CRYPTO_PREFIX=${crypto.prefix} -DCUSTOM_CRYPTO_LIB=${crypto.lib} -DCUSTOM_CRYPTO_INCLUDE=${crypto.include}"/>
+                                    <arg line="${basedir}/src/ -DGENERATED_JAVAH=${project.build.directory}/native/javah -DJVM_ARCH_DATA_MODEL=${sun.arch.data.model} -DREQUIRE_CRYPTO=${require.crypto} -DCUSTOM_CRYPTO_PREFIX=${crypto.prefix} -DCUSTOM_CRYPTO_LIB=${crypto.lib} -DCUSTOM_CRYPTO_INCLUDE=${crypto.include} -DREQUIRE_AESMB=${require.aesmb}"/>
                                 </exec>
                                 <exec executable="make" dir="${project.build.directory}/native"
                                       failonerror="true">

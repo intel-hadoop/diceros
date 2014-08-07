@@ -19,18 +19,19 @@ https://github.com/intel-hadoop/diceros/wiki/Quick-Start
 
 #### Software prerequisite:
 * <p>openssl-1.0.1c or above
+* <p>yasm-1.2.0 or above</p>
 * <p>openjdk6 or above, oracle jdk6 or above</p>
-* <p>add `libdiceros.so`(which are generated after build) to the environment variable `java.library.path`</p>
+* <p>add `libdiceros.so` and `libaesmb.so` (which are generated after build) to the environment variable `java.library.path`</p>
 * <p>add `diceros-[VERSION].jar`(which is generated after build) to the classpath</p>
 
 ### Build
-`mvn package`
+`mvn package -Dyasm.prefix={yasm path}`
 
 ### Build RPM
 `mvn package -Drpm.install.prefix.default={default install path, should point to your jre home, for example: /usr/java/default/jre}`
 
 ### Sign the diceros jar file with keystore
-`mvn clean  package -DskipTests -Psign -Dkeystore.path={keystore path} -Dkeystore.alias={keystore.alias} -Dkeystore.password={keystore.password}`
+`mvn clean  package -DskipTests -Psign -Dkeystore.path={keystore path} -Dkeystore.alias={keystore.alias} -Dkeystore.password={keystore.password} -Dyasm.prefix={yasm path}`
 
 ### Download Binary Releases
 https://github.com/intel-hadoop/diceros/releases

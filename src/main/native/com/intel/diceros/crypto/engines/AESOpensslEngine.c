@@ -42,6 +42,7 @@ CipherContext* preInitContext(JNIEnv *env, CipherContext* cipherCtx, jint mode,
     cipherCtx->keyLength = 0;
     cipherCtx->iv = NULL;
     cipherCtx->ivLength = 0;
+    cipherCtx->aesmbCtx = NULL;
   }
   int keyLength = (*env)->GetArrayLength(env, key);
   if (cipherCtx->key == NULL || cipherCtx->keyLength != keyLength) {

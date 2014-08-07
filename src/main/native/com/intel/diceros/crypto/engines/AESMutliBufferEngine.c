@@ -57,9 +57,18 @@ JNIEXPORT jlong JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngi
   if (loadLibraryResult == -1) {
      throwDLError(env, HADOOP_CRYPTO_LIBRARY);
      return 0;
+  } else if (loadLibraryResult == -2) {
+     traceDLError(HADOOP_AESMB_LIBRARY);
   }
 
   return ctx;
+}
+
+JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngine_destoryCipherContext(
+    JNIEnv *env, jobject object, jlong cipherContext) {
+  CipherContext* cipherCtx = (CipherContext*) cipherContext;
+  destroyCipherContext(cipherCtx);
+  return 0;
 }
 
 /*

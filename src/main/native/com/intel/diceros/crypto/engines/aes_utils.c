@@ -34,6 +34,11 @@ void destroyCipherContext(CipherContext* ctx) {
   ctx->key = NULL;
   free(ctx->iv);
   ctx->iv = NULL;
+
+  // destroy AESMB context
+  free(ctx->aesmbCtx);
+  ctx->aesmbCtx = NULL;
+
   free(ctx);
 }
 
