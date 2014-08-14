@@ -24,6 +24,7 @@ import com.intel.diceros.crypto.InvalidCipherTextException;
 import com.intel.diceros.crypto.OutputLengthException;
 import com.intel.diceros.crypto.modes.CBCBlockCipher;
 import com.intel.diceros.crypto.modes.CTRBlockCipher;
+import com.intel.diceros.crypto.modes.XTSBlockCipher;
 import com.intel.diceros.crypto.params.CipherParameters;
 import com.intel.diceros.crypto.params.KeyParameter;
 import com.intel.diceros.crypto.params.ParametersWithIV;
@@ -41,15 +42,13 @@ import java.util.Locale;
  * Base Class for BlockCipher.
  */
 public abstract class BaseBlockCipher extends CipherSpi {
-
   @SuppressWarnings("rawtypes")
   private Class[] availableSpecs = {IvParameterSpec.class};
 
-  private BlockCipher baseEngine; // the underlying cipher engine, do the actual encryption and decryption work
   private GenericBlockCipher cipher; // wrapping baseEngine, do some preprocessing work
   private ParametersWithIV ivParam; // parameter of key data, initialization vector, etc
   private int ivLength = 0; // the initialization vector length
-  protected AlgorithmParameters engineParams = null;
+  protected AlgorithmParameters engineParams;
 
   /**
    * Constructor
@@ -58,7 +57,6 @@ public abstract class BaseBlockCipher extends CipherSpi {
    *               decryption work
    */
   protected BaseBlockCipher(BlockCipher engine) {
-    baseEngine = engine;
     cipher = new GenericBlockCipherImpl(engine);
   }
 
@@ -69,23 +67,25 @@ public abstract class BaseBlockCipher extends CipherSpi {
    *                 encryption and decryption work
    */
   protected BaseBlockCipher(BlockCipherProvider provider) {
-    baseEngine = provider.get();
+    BlockCipher baseEngine = provider.get();
 
     int modeName = baseEngine.getMode();
     if (modeName == Constants.MODE_CTR) {
       cipher = new GenericBlockCipherImpl(new CTRBlockCipher(baseEngine));
     } else if (modeName == Constants.MODE_CBC) {
       cipher = new GenericBlockCipherImpl(new CBCBlockCipher(baseEngine));
+    } else if (modeName == Constants.MODE_XTS) {
+      cipher = new GenericBlockCipherImpl(new XTSBlockCipher(baseEngine));
     } else {
       cipher = new GenericBlockCipherImpl(baseEngine);
     }
-    
+
     ivLength = baseEngine.getBlockSize();
   }
 
   @Override
   protected int engineGetBlockSize() {
-    return baseEngine.getBlockSize();
+    return cipher.getBlockSize();
   }
 
   @Override
@@ -131,7 +131,9 @@ public abstract class BaseBlockCipher extends CipherSpi {
   protected void engineSetMode(String mode) throws NoSuchAlgorithmException {
     String modeName = mode.toUpperCase(Locale.ENGLISH);
 
-    if (!modeName.startsWith("CTR") || !modeName.startsWith("CBC")) {
+    if (!modeName.startsWith("CTR")
+        && !modeName.startsWith("CBC")
+        && !modeName.startsWith("XTS")) {
       throw new NoSuchAlgorithmException("can't support mode " + mode);
     }
   }
@@ -141,7 +143,6 @@ public abstract class BaseBlockCipher extends CipherSpi {
     String paddingName = padding.toUpperCase(Locale.ENGLISH);
 
     if (paddingName.equals("NOPADDING") || paddingName.equals("PKCS5PADDING")) {
-      cipher = new GenericBlockCipherImpl(cipher.getUnderlyingCipher());
       cipher.setPadding(paddingName);
     } else {
       throw new NoSuchPaddingException("Padding " + padding + " unknown.");
@@ -310,7 +311,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
     if (output.isReadOnly()) {
       throw new ReadOnlyBufferException();
     }
-    return cipher.processBytes(input, output);
+    return cipher.processByteBuffer(input, output);
   }
 
   @Override
@@ -394,10 +395,12 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
     public int getOutputSize(int len);
 
+    public int getBlockSize();
+
     public int processBytes(byte[] in, int inOff, int len, byte[] out,
         int outOff) throws DataLengthException;
 
-    public int processBytes(ByteBuffer input, ByteBuffer output)
+    public int processByteBuffer(ByteBuffer input, ByteBuffer output)
         throws ShortBufferException;
 
     public int doFinal(byte[] out, int outOff) throws IllegalStateException, InvalidCipherTextException;
@@ -413,7 +416,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
     /**
      * the Padding type
      */
-    private String padding = Constants.NOPADDING;
+    private int padding = Constants.PADDING_NOPADDING;
 
     /**
      * are we encrypting or not?
@@ -465,13 +468,18 @@ public abstract class BaseBlockCipher extends CipherSpi {
         return 0;
       }
       int totalLen = buffered + len;
-      if (padding.equals(Constants.NOPADDING))
+      if (padding == Constants.PADDING_NOPADDING)
         return totalLen;
       if (!forEncryption)
         return totalLen;
       if (totalLen < blockSize)
         return blockSize;
       return totalLen + blockSize - (len % blockSize) + head;
+    }
+
+    @Override
+    public int getBlockSize() {
+      return cipher.getBlockSize();
     }
 
     /**
@@ -495,7 +503,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
       }
       int length = getOutputSize(len);
       if (length > 0) {
-        if ((((forEncryption && padding.equals(Constants.NOPADDING)) &&
+        if ((((forEncryption && padding == Constants.PADDING_NOPADDING) &&
                 (outOff + length) > out.length) ||
                 (!forEncryption && (outOff + length - blockSize) > out.length))) {
           throw new OutputLengthException("output buffer too short");
@@ -510,9 +518,9 @@ public abstract class BaseBlockCipher extends CipherSpi {
     }
 
     @Override
-    public int processBytes(ByteBuffer input, ByteBuffer output)
+    public int processByteBuffer(ByteBuffer input, ByteBuffer output)
         throws ShortBufferException {
-      return bufferCrypt(input, output, true);
+      return processByteBuffer(input, output, true);
     }
 
     @Override
@@ -538,7 +546,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
         throws ShortBufferException {
       int result = 0;
       try {
-        result = bufferCrypt(input, output, false);
+        result = processByteBuffer(input, output, false);
       } catch (ShortBufferException e) {
         throw e;
       } finally {
@@ -548,7 +556,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
       return result;
     }
 
-    private int bufferCrypt(ByteBuffer input, ByteBuffer output,
+    private int processByteBuffer(ByteBuffer input, ByteBuffer output,
         boolean isUpdate) throws ShortBufferException {
       if ((input == null) || (output == null)) {
         throw new NullPointerException(
@@ -575,7 +583,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
             + " bytes of space in output buffer");
       }
       // need native process
-      int n = cipher.bufferCrypt(input, output, isUpdate);
+      int n = cipher.processByteBuffer(input, output, isUpdate);
       if (cipher.getMode() == Constants.MODE_CBC) {
         buffered = buffered + inLen -n;
       }
@@ -592,29 +600,26 @@ public abstract class BaseBlockCipher extends CipherSpi {
       cipher.reset();
     }
 
-    public void setPadding(String padding) throws NoSuchPaddingException {
-      String paddingName = padding.toUpperCase(Locale.ENGLISH);
-
-      if (paddingName == null) {
+    public void setPadding(String paddingScheme) throws NoSuchPaddingException {
+      if (paddingScheme == null) {
         throw new NoSuchPaddingException("null padding");
-      } else if (paddingName.equalsIgnoreCase("NoPadding")) {
-        padding = Constants.NOPADDING;
-      } else if (!paddingName.equalsIgnoreCase("PKCS5Padding")) {
-        throw new NoSuchPaddingException("Padding: " + paddingName
+      } else if (paddingScheme.equalsIgnoreCase("NoPadding")) {
+        padding = Constants.PADDING_NOPADDING;
+      } else if (paddingScheme.equalsIgnoreCase("PKCS5Padding")) {
+        padding = Constants.PADDING_PKCS5PADDING;
+      } else {
+        throw new NoSuchPaddingException("Padding: " + paddingScheme
             + " not implemented");
       }
-      if ((!padding.equals(Constants.NOPADDING)) && (cipher.getAlgorithmName().contains("CTR"))) {
-        this.padding = Constants.NOPADDING;
+
+      if ((padding != Constants.PADDING_NOPADDING)
+          && (cipher.getMode() == Constants.MODE_CTR
+              || cipher.getMode() == Constants.MODE_XTS)) {
         throw new NoSuchPaddingException(cipher.getAlgorithmName() +
             " mode must be used with NoPadding");
       }
-      this.padding = paddingName;
-      
-      if (paddingName.equalsIgnoreCase("NoPadding")) {
-        cipher.setPadding(Constants.PADDING_NOPADDING);
-      } else if (paddingName.equalsIgnoreCase("PKCS5Padding")) {
-        cipher.setPadding(Constants.PADDING_PKCS5PADDING);
-      }
+
+      cipher.setPadding(padding);
     }
   }
 }

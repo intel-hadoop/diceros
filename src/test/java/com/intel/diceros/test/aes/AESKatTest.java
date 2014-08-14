@@ -85,12 +85,17 @@ public class AESKatTest extends BaseBlockCipherTest{
   private static String[] CBC_KEYSBOX_RSP = { "CBCKeySbox128.rsp" , "CBCKeySbox256.rsp"};
   private static String[] CBC_VARKEY_RSP = { "CBCVarKey128.rsp" , "CBCVarKey256.rsp"};
   private static String[] CBC_VARTEXT_RSP = { "CBCVarTxt128.rsp" , "CBCVarTxt256.rsp"};
+
+  private static String[] XTS_TWEAK_RSP = {"XTSGenAES128.rsp", "XTSGenAES256.rsp"};
+
   private static Map<String, String[]> CBC_KAT_SUITE = new HashMap<String, String[]>();
+  private static Map<String, String[]> XTS_KAT_SUITE = new HashMap<String, String[]>();
   static {
     CBC_KAT_SUITE.put(KATTYPE.GFSBOX.getName(), CBC_GFSBOX_RSP);
     CBC_KAT_SUITE.put(KATTYPE.KEYSBOX.getName(), CBC_KEYSBOX_RSP);
     CBC_KAT_SUITE.put(KATTYPE.VARKEY.getName(), CBC_VARKEY_RSP);
     CBC_KAT_SUITE.put(KATTYPE.VARTEXT.getName(), CBC_VARTEXT_RSP);
+    XTS_KAT_SUITE.put(KATTYPE.TWEAK.getName(), XTS_TWEAK_RSP);
   }
   /*
    * 
@@ -99,8 +104,9 @@ public class AESKatTest extends BaseBlockCipherTest{
       new HashMap<String, Map<String, String[]>>();
   static {
     ALL_KAT_SUITE.put("AES/CBC/NoPadding", CBC_KAT_SUITE);
+    ALL_KAT_SUITE.put("AES/XTS/NoPadding", XTS_KAT_SUITE);
   }
-  public static final String RESOURCES_PREFIX = "/rsp/";
+  public static final String RESOURCES_PREFIX = "/";
   
   private Cipher cipher;
   private byte[] result = new byte[INPUT_BUFFER_SIZE];
@@ -112,29 +118,29 @@ public class AESKatTest extends BaseBlockCipherTest{
   public void performTest() throws Exception {
     for (String cipherName : ALL_KAT_SUITE.keySet()) {
       cipher = Cipher.getInstance(cipherName, "DC");
-      for (KATTYPE type : KATTYPE.values()) {
+      for (String type : ALL_KAT_SUITE.get(cipherName).keySet()) {
         for (KatSuite suite : loadKatSuites(cipherName, type)) {
           if (suite.isEncrypt()) {
             cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(suite.getKey(),
                 "AES"), new IvParameterSpec(suite.getIv()));
             cipher.doFinal(suite.getPlainText(), 0,
                 suite.getPlainText().length, result, 0);
-            byte[] tmp = new byte[suite.getCipherText().length];
-            System.arraycopy(result, 0, tmp, 0, suite.getCipherText().length);
+            byte[] tmp = new byte[suite.getPlainText().length];
+            System.arraycopy(result, 0, tmp, 0, suite.getPlainText().length);
             if (!Arrays.areEqual(suite.getCipherText(), tmp)) {
               throw new AssertionFailedError("AES failed encryption, KatSuite="
-                  + suite);
+                  + suite + ", Cipher=" + cipherName);
             }
           } else {
             cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(suite.getKey(),
                 "AES"), new IvParameterSpec(suite.getIv()));
             cipher.doFinal(suite.getCipherText(), 0,
-                suite.getCipherText().length, result, 0);
+                suite.getPlainText().length, result, 0);
             byte[] tmp = new byte[suite.getPlainText().length];
             System.arraycopy(result, 0, tmp, 0, suite.getPlainText().length);
             if (!Arrays.areEqual(suite.getPlainText(), tmp)) {
               throw new AssertionFailedError("AES failed decryption, KatSuite="
-                  + suite);
+                  + suite + ", Cipher=" + cipherName);
             }
           }
         }
@@ -142,10 +148,10 @@ public class AESKatTest extends BaseBlockCipherTest{
     }
   }
 
-  private List<KatSuite> loadKatSuites(String mode, KATTYPE type)
+  private List<KatSuite> loadKatSuites(String mode, String type)
       throws Exception {
     Map<String, String[]> modeSuite = ALL_KAT_SUITE.get(mode);
-    String[] rsps = modeSuite.get(type.getName());
+    String[] rsps = modeSuite.get(type);
     return parseSuites(rsps);
   }
 
@@ -159,6 +165,7 @@ public class AESKatTest extends BaseBlockCipherTest{
           boolean encryptSuite = true;
           KatSuite suite = null;
           String line = null;
+          boolean skipLast = false;
           while ((line = reader.readLine()) != null ) {
             if (line.trim().isEmpty()) {
               continue;
@@ -167,11 +174,12 @@ public class AESKatTest extends BaseBlockCipherTest{
               encryptSuite = false;
               continue;
             }
-            if (line.contains("SUITE")) {
-              if (suite != null) {
+            if (line.contains("SUITE") || line.contains("COUNT")) {
+              if (suite != null && !skipLast) {
                 suites.add(suite);
               }
               suite = new KatSuite();
+              skipLast = false;
               if (encryptSuite) {
                 suite.setEncrypt(true);
               } else {
@@ -187,13 +195,17 @@ public class AESKatTest extends BaseBlockCipherTest{
             String data = tokens.get(1);
             if (name.equalsIgnoreCase("KEY")) {
               suite.setKey(Hex.decode(data));
-            } else if (name.equalsIgnoreCase("IV")) {
+            } else if (name.equalsIgnoreCase("IV") || name.equalsIgnoreCase("i")) {
               suite.setIv(Hex.decode(data));
-            } else if (name.equalsIgnoreCase("PLAINTEXT")) {
+            } else if (name.equalsIgnoreCase("PLAINTEXT") || name.equalsIgnoreCase("PT")) {
               suite.setPlainText(Hex.decode(data));
-            } else if (name.equalsIgnoreCase("CIPHERTEXT")) {
+            } else if (name.equalsIgnoreCase("CIPHERTEXT") || name.equalsIgnoreCase("CT")) {
               suite.setCipherText(Hex.decode(data));
-            } else {
+            } else if (name.equalsIgnoreCase("DataUnitLen")) {
+              int dataUnitLen = Integer.parseInt(data);
+              if (dataUnitLen % 8 != 0) {
+                skipLast = true;
+              }
             }
           }
         } finally {
@@ -279,5 +291,4 @@ public class AESKatTest extends BaseBlockCipherTest{
   public static void main(String[] args) throws Exception{
     new AESKatTest().testAESKat();
   }
-
 }

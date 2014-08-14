@@ -57,7 +57,8 @@ JNIEXPORT jlong JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngi
   }
 
   int loadLibraryResult = 0;
-  long ctx = init(forEncryption, nativeKey, keyLength, nativeIv, ivLength, padding , oldContext, &loadLibraryResult);
+  long ctx = init(env, forEncryption, nativeKey, keyLength, nativeIv, ivLength, padding ,
+      oldContext, &loadLibraryResult);
   if (loadLibraryResult == -1) {
      throwDLError(env, HADOOP_CRYPTO_LIBRARY);
      return 0;
@@ -79,7 +80,7 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngin
  * Class:     com_intel_diceros_crypto_engines_AESMutliBufferEngine
  * Method:    doFinal
  */
-JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngine_bufferCrypt(JNIEnv * env,
+JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngine_processByteBuffer(JNIEnv * env,
     jobject object, jlong context, jobject inputDirectBuffer, jint start, jint inputLength,
     jobject outputDirectBuffer, jint begin, jboolean isUpdate) {
   unsigned char * input = (unsigned char *)(*env)->GetDirectBufferAddress(env, inputDirectBuffer) + start;

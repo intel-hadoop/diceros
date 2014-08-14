@@ -80,33 +80,12 @@ JNIEXPORT jlong JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_i
   (*env)->GetByteArrayRegion(env, IV, 0, cipherCtx->ivLength, cipherCtx->iv);
 
   cryptInit cryptInitFunc = getCryptInitFunc(forEncryption);
-
-  if (mode == MODE_CTR) {
-    if (cipherCtx->keyLength == 32) {
-      cryptInitFunc(cipherCtx->opensslCtx, EVP_aes_256_ctr(), NULL,
-          (unsigned char *) cipherCtx->key, (unsigned char *) cipherCtx->iv);
-    } else if (cipherCtx->keyLength == 24) {
-      cryptInitFunc(cipherCtx->opensslCtx, EVP_aes_192_ctr(), NULL,
-          (unsigned char *) cipherCtx->key, (unsigned char *) cipherCtx->iv);
-    } else if (cipherCtx->keyLength == 16) {
-      cryptInitFunc(cipherCtx->opensslCtx, EVP_aes_128_ctr(), NULL,
-          (unsigned char *) cipherCtx->key, (unsigned char *) cipherCtx->iv);
-    } else {
-      THROW(env, "java/lang/IllegalArgumentException", "Illegal key size");
-    }
-  } else if (mode == MODE_CBC) {
-    if (cipherCtx->keyLength == 32) {
-      cryptInitFunc(cipherCtx->opensslCtx, EVP_aes_256_cbc(), NULL,
-          (unsigned char *) cipherCtx->key, (unsigned char *) cipherCtx->iv);
-    } else if (cipherCtx->keyLength == 24) {
-      cryptInitFunc(cipherCtx->opensslCtx, EVP_aes_192_cbc(), NULL,
-          (unsigned char *) cipherCtx->key, (unsigned char *) cipherCtx->iv);
-    } else if (cipherCtx->keyLength == 16) {
-      cryptInitFunc(cipherCtx->opensslCtx, EVP_aes_128_cbc(), NULL,
-          (unsigned char *) cipherCtx->key, (unsigned char *) cipherCtx->iv);
-    } else {
-      THROW(env, "java/lang/IllegalArgumentException", "Illegal key size");
-    }
+  EVP_CIPHER* cipher = getCipher(mode, cipherCtx->keyLength);
+  if (cipher != NULL) {
+    cryptInitFunc(cipherCtx->opensslCtx, cipher, NULL,
+        (unsigned char *) cipherCtx->key, (unsigned char *) cipherCtx->iv);
+  } else {
+    THROW(env, "java/lang/IllegalArgumentException", "unsupportted mode or key size");
   }
 
   if (padding == PADDING_NOPADDING) {
@@ -136,6 +115,7 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_pr
 
   if (!cryptUpdateFunc(ctx, output + outOff, &outLength, input + inOff,
       inLen)) {
+    fprintf(stderr, "inLen: %d, outLen: %d\n", inLen, outLength);
     THROW(env, "java/security/GeneralSecurityException",
         "Error in EVP_EncryptUpdate or EVP_DecryptUpdate");
     ERR_print_errors_fp(stderr);
@@ -169,7 +149,7 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_do
   return outLength;
 }
 
-JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_bufferCrypt(
+JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_processByteBuffer(
     JNIEnv *env, jobject object, jlong cipherContext, jobject input,
     jint inputPos, jint inputLimit, jobject output, jint outputPos,
     jboolean isUpdate) {

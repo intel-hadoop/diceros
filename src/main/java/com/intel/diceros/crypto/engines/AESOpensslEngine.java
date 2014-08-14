@@ -28,11 +28,10 @@ import java.nio.ByteBuffer;
 
 /**
  * This class implements the <i>BlockCipher</i> interface. It depends on the
- * underlying openssl library to do the actual encryption and decryption work.
+ * underlying openssl library to do the actual encryption/decryption work.
  */
 public class AESOpensslEngine implements BlockCipher {
   private boolean forEncryption = false;
-  private int blockSize = 16;
   private int mode;
   private int padding = Constants.PADDING_NOPADDING;
   private byte[] IV;
@@ -54,10 +53,14 @@ public class AESOpensslEngine implements BlockCipher {
     if (params == null) {
       params = this.params;
     }
-    
+
     if (params instanceof KeyParameter) {
       this.forEncryption = forEncryption;
       this.params = params;
+      if (!isKeySizeValid(((KeyParameter) params).getKey().length)) {
+        throw new IllegalArgumentException("Invalid AES key length: " +
+            ((KeyParameter) params).getKey().length + " bytes");
+      }
       aesContext = initWorkingKey(((KeyParameter) params).getKey(), forEncryption,
           mode, padding, IV, aesContext);
     } else {
@@ -74,7 +77,7 @@ public class AESOpensslEngine implements BlockCipher {
 
   @Override
   public int getBlockSize() {
-    return blockSize;
+    return Constants.AES_BLOCK_SIZE;
   }
 
   @Override
@@ -108,13 +111,13 @@ public class AESOpensslEngine implements BlockCipher {
   }
 
   @Override
-  public int bufferCrypt(ByteBuffer input, ByteBuffer output, boolean isUpdate) {
+  public int processByteBuffer(ByteBuffer input, ByteBuffer output, boolean isUpdate) {
     checkCipherInit();
-    return bufferCrypt(aesContext, input, input.position(), input.limit(), output,
+    return processByteBuffer(aesContext, input, input.position(), input.limit(), output,
         output.position(), isUpdate);
   }
 
-  private native int bufferCrypt(long context, ByteBuffer input, int inputPos,
+  private native int processByteBuffer(long context, ByteBuffer input, int inputPos,
       int inputLimit, ByteBuffer output, int outputPos, boolean isUpdate);
 
   private native long initWorkingKey(byte[] key, boolean forEncryption,
@@ -151,10 +154,23 @@ public class AESOpensslEngine implements BlockCipher {
   public int getHeadLength() {
     return 0;
   }
-  
+
   private void checkCipherInit() {
     if (aesContext == 0) {
       init(forEncryption, params);
     }
+  }
+
+  private boolean isKeySizeValid(int len) {
+    int multi = 1;
+    if (mode == Constants.MODE_XTS) {
+      multi = 2;
+    }
+    for (int i = 0; i < Constants.AES_KEYSIZES.length; i++) {
+      if (len == Constants.AES_KEYSIZES[i] * multi) {
+        return true;
+      }
+    }
+    return false;
   }
 }

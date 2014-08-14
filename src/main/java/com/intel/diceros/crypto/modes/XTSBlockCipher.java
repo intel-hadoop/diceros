@@ -18,27 +18,22 @@
 
 package com.intel.diceros.crypto.modes;
 
+import java.nio.ByteBuffer;
+import java.security.ProviderException;
+
+import javax.crypto.IllegalBlockSizeException;
+
 import com.intel.diceros.crypto.BlockCipher;
 import com.intel.diceros.crypto.DataLengthException;
 import com.intel.diceros.crypto.params.CipherParameters;
 import com.intel.diceros.crypto.params.KeyParameter;
 import com.intel.diceros.crypto.params.ParametersWithIV;
+import com.intel.diceros.provider.symmetric.util.Constants;
 
-import java.nio.ByteBuffer;
+public class XTSBlockCipher implements BlockCipher{
+  private BlockCipher cipher;
 
-/**
- * Implements the CTR mode on top of a simple block cipher. This mode is also
- * known as Segmented Integer Counter (SIC) mode.
- */
-public class CTRBlockCipher implements BlockCipher {
-  private final BlockCipher cipher;
-
-  /**
-   * Basic constructor.
-   *
-   * @param c the underlying block cipher to be used
-   */
-  public CTRBlockCipher(BlockCipher c) {
+  public XTSBlockCipher(BlockCipher c) {
     this.cipher = c;
   }
 
@@ -54,16 +49,16 @@ public class CTRBlockCipher implements BlockCipher {
         cipher.init(forEncryption, param);
       } else {
         throw new IllegalArgumentException(
-                "CTR mode requires ParametersWithIV");
+                "XTS mode requires ParametersWithIV");
       }
     } else {
-      throw new IllegalArgumentException("CTR mode requires ParametersWithIV");
+      throw new IllegalArgumentException("XTS mode requires ParametersWithIV");
     }
   }
 
   @Override
   public String getAlgorithmName() {
-    return cipher.getAlgorithmName() + "/CTR" + (getBlockSize() * 8);
+    return cipher.getAlgorithmName() + "/XTS" + (getBlockSize() * 8);
   }
 
   @Override
@@ -72,8 +67,16 @@ public class CTRBlockCipher implements BlockCipher {
   }
 
   @Override
+  public void setIV(byte[] IV) {
+    cipher.setIV(IV);
+  }
+
+  @Override
   public int processBlock(byte[] in, int inOff, int inLen, byte[] out,
-                          int outOff) throws DataLengthException, IllegalStateException {
+      int outOff) throws DataLengthException, IllegalStateException {
+    if (inLen < getBlockSize()) {
+      throw new ProviderException("input is too short!");
+    }
     return cipher.processBlock(in, inOff, inLen, out, outOff);
   }
 
@@ -83,7 +86,12 @@ public class CTRBlockCipher implements BlockCipher {
   }
 
   @Override
-  public int processByteBuffer(ByteBuffer input, ByteBuffer output, boolean isUpdate) {
+  public int processByteBuffer(ByteBuffer input, ByteBuffer output,
+      boolean isUpdate) {
+    int inLen = input.limit() - input.position();
+    if (inLen < getBlockSize()) {
+      throw new ProviderException("input is too short!");
+    }
     return cipher.processByteBuffer(input, output, isUpdate);
   }
 
@@ -98,13 +106,8 @@ public class CTRBlockCipher implements BlockCipher {
   }
 
   @Override
-  public void setIV(byte[] IV) {
-    cipher.setIV(IV);
-  }
-
-  @Override
   public int getMode() {
-    return cipher.getMode();
+    return Constants.MODE_XTS;
   }
 
   @Override

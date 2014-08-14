@@ -419,7 +419,7 @@ CipherContext* createCipherContextMB(void* handle, signed char* key, int keylen,
   return ctx;
 }
 
-long init(int forEncryption, signed char* nativeKey, int keyLength, signed char* nativeIv,
+long init(JNIEnv* env, int forEncryption, signed char* nativeKey, int keyLength, signed char* nativeIv,
     int ivLength, int padding , long oldContext, int* loadLibraryResult) {
   // Load libcrypto.so, if error, throw java exception
   if (!loadLibrary(HADOOP_CRYPTO_LIBRARY)) {
@@ -444,7 +444,11 @@ long init(int forEncryption, signed char* nativeKey, int keyLength, signed char*
   CipherContext* ctx = createCipherContextMB(handle, nativeKey, keyLength, nativeIv, ivLength);
   // init openssl context, by using localized key & iv
   EVP_CIPHER_CTX_init(ctx->opensslCtx);
-  opensslResetContext(forEncryption, ctx->opensslCtx, ctx);
+  if (-1 == opensslResetContext(forEncryption, ctx->opensslCtx, ctx)) {
+    destroyCipherContext(ctx);
+    THROW(env, "java/lang/IllegalArgumentException", "unsupportted key size");
+    return 0;
+  }
   if (PADDING_NOPADDING == padding) {
     EVP_CIPHER_CTX_set_padding(ctx->opensslCtx, 0);
   } else if (PADDING_PKCS5PADDING == padding){
@@ -453,27 +457,24 @@ long init(int forEncryption, signed char* nativeKey, int keyLength, signed char*
   return (long)ctx;
 }
 
-void opensslResetContext(int forEncryption, EVP_CIPHER_CTX* context, CipherContext* cipherContext) {
-  opensslResetContextMB(forEncryption, context, cipherContext, 0);
+int opensslResetContext(int forEncryption, EVP_CIPHER_CTX* context, CipherContext* cipherContext) {
+  return opensslResetContextMB(forEncryption, context, cipherContext, 0);
 }
 
-void opensslResetContextMB(int forEncryption, EVP_CIPHER_CTX* context,
+int opensslResetContextMB(int forEncryption, EVP_CIPHER_CTX* context,
     CipherContext* cipherContext, int count) {
   int keyLength = cipherContext->keyLength;
   unsigned char* nativeKey = (unsigned char*) cipherContext->key;
   unsigned char* nativeIv = (unsigned char*) cipherContext->iv + count * 16;
 
   cryptInit cryptInitFunc = getCryptInitFunc(forEncryption);
-  if (keyLength == 32) {
-    cryptInitFunc(context, EVP_aes_256_cbc(), NULL,
+  EVP_CIPHER* cipher = getCipher(MODE_CBC, keyLength);
+  if (cipher != NULL) {
+    cryptInitFunc(context, cipher, NULL,
         (unsigned char *) nativeKey, (unsigned char *) nativeIv);
-  } else if (keyLength == 24) {
-    cryptInitFunc(context, EVP_aes_192_cbc(), NULL,
-        (unsigned char *) nativeKey, (unsigned char *) nativeIv);
-  } else if (keyLength == 16) {
-    cryptInitFunc(context, EVP_aes_128_cbc(), NULL,
-        (unsigned char *) nativeKey, (unsigned char *) nativeIv);
+    return 0;
   }
+  return -1;
 }
 
 void reset(CipherContext* cipherContext, uint8_t* nativeKey, uint8_t* nativeIv) {

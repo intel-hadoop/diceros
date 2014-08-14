@@ -38,6 +38,7 @@
 
 #define MODE_CTR 0
 #define MODE_CBC 1
+#define MODE_XTS 2
 
 #define PADDING_NOPADDING 0
 #define PADDING_PKCS5PADDING 1
@@ -77,5 +78,7 @@ typedef int (*cryptFinal)(EVP_CIPHER_CTX *, unsigned char *, int *);
 cryptInit getCryptInitFunc(int forEncryption);
 cryptUpdate getCryptUpdateFunc(int forEncryption);
 cryptFinal getCryptFinalFunc(int forEncryption);
+
+EVP_CIPHER* getCipher(int mode, int keyLen);
 
 #endif

@@ -65,3 +65,39 @@ cryptFinal getCryptFinalFunc(int forEncryption) {
     return EVP_DecryptFinal_ex;
   }
 }
+
+EVP_CIPHER* getCipher(int mode, int keyLen) {
+  if (mode == MODE_CTR) {
+    switch (keyLen) {
+    case 16:
+      return EVP_aes_128_ctr();
+    case 24:
+      return EVP_aes_192_ctr();
+    case 32:
+      return EVP_aes_256_ctr();
+    default:
+      return NULL;
+    }
+  } else if (mode == MODE_CBC) {
+    switch (keyLen) {
+    case 16:
+      return EVP_aes_128_cbc();
+    case 24:
+      return EVP_aes_192_cbc();
+    case 32:
+      return EVP_aes_256_cbc();
+    default:
+      return NULL;
+    }
+  } else if (mode == MODE_XTS) {
+    switch (keyLen) {
+    case 32:
+      return EVP_aes_128_xts();
+    case 64:
+      return EVP_aes_256_xts();
+    default:
+      return NULL;
+    }
+  }
+  return NULL;
+}

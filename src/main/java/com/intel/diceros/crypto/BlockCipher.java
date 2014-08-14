@@ -103,7 +103,7 @@ public interface BlockCipher {
    *                 doing engineDoFinal
    * @return the number of bytes stored in <code>output</code>
    */
-  public int bufferCrypt(ByteBuffer input, ByteBuffer output, boolean isUpdate);
+  public int processByteBuffer(ByteBuffer input, ByteBuffer output, boolean isUpdate);
 
   /**
    * Reset the cipher. After resetting the cipher is in the same state as it was
@@ -127,5 +127,8 @@ public interface BlockCipher {
 
   public int getPadding();
 
+  /**
+   * This method is used by Multi-Buffer which need 2-byte head.
+   */
   public int getHeadLength();
 }

@@ -87,7 +87,10 @@ public class KatSuite {
     GFSBOX("GFSbox"),
     KEYSBOX("keySbox"),
     VARKEY("Variable Key"),
-    VARTEXT("Variable Text");
+    VARTEXT("Variable Text"),
+
+    TWEAK("tweak");
+    //DATAUNITSEQNUMBER("DataUnitSeqNumber");
 
     private String name;
 

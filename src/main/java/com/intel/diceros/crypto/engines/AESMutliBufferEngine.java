@@ -27,13 +27,10 @@ import com.intel.diceros.provider.symmetric.util.Constants;
 import java.nio.ByteBuffer;
 
 public class AESMutliBufferEngine implements BlockCipher {
-
   private boolean forEncryption = false;
-  private int blockSize = 16;
   private int mode;
   private int padding = Constants.PADDING_PKCS5PADDING;
   private byte[] IV;
-  private int head = 2;
   CipherParameters params = null;
   private long aesContext = 0; // context used by openssl
 
@@ -52,6 +49,10 @@ public class AESMutliBufferEngine implements BlockCipher {
     if (params instanceof KeyParameter) {
       this.forEncryption = forEncryption;
       this.params = params;
+      if (!isKeySizeValid(((KeyParameter) params).getKey().length)) {
+        throw new IllegalArgumentException("Invalid AES key length: " +
+            ((KeyParameter) params).getKey().length + " bytes");
+      }
       aesContext = init(forEncryption, ((KeyParameter) params).getKey(), IV, padding, aesContext);
     } else {
       throw new IllegalArgumentException(
@@ -67,7 +68,7 @@ public class AESMutliBufferEngine implements BlockCipher {
 
   @Override
   public int getBlockSize() {
-    return blockSize;
+    return Constants.AES_BLOCK_SIZE;
   }
 
   @Override
@@ -100,23 +101,14 @@ public class AESMutliBufferEngine implements BlockCipher {
   }
 
   @Override
-  public int bufferCrypt(ByteBuffer input, ByteBuffer output, boolean isUpdate) {
+  public int processByteBuffer(ByteBuffer input, ByteBuffer output, boolean isUpdate) {
     if (isUpdate) {
       throw new UnsupportedOperationException("Mutli Buffer don't support the update method.");
     }
     checkCipherInit();
-    return bufferCrypt(aesContext, input, input.position(), input.limit()-input.position(), output,
+    return processByteBuffer(aesContext, input, input.position(), input.limit()-input.position(), output,
             output.position(), isUpdate);
   }
-
-  private native int bufferCrypt(long context, ByteBuffer inputDirectBuffer, int start,
-      int inputLength, ByteBuffer outputDirectBuffer, int begin, boolean isUpdate);
-
-  protected native long init(boolean forEncryption, byte[] key, byte[] iv, int padding, long oldContext);
-
-  private native int processBlock(long context, byte[] in, int inOff, int inLen, byte[] out, int outOff);
-
-  private native int destoryCipherContext(long context);
 
   @Override
   public void setIV(byte[] IV) {
@@ -140,7 +132,7 @@ public class AESMutliBufferEngine implements BlockCipher {
 
   @Override
   public int getHeadLength() {
-    return this.head;
+    return 2;
   }
 
   private void checkCipherInit() {
@@ -148,4 +140,22 @@ public class AESMutliBufferEngine implements BlockCipher {
       init(forEncryption, params);
     }
   }
+
+  private boolean isKeySizeValid(int len) {
+    for (int i = 0; i < Constants.AES_KEYSIZES.length; i++) {
+      if (len == Constants.AES_KEYSIZES[i]) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private native int processByteBuffer(long context, ByteBuffer inputDirectBuffer, int start,
+      int inputLength, ByteBuffer outputDirectBuffer, int begin, boolean isUpdate);
+
+  protected native long init(boolean forEncryption, byte[] key, byte[] iv, int padding, long oldContext);
+
+  private native int processBlock(long context, byte[] in, int inOff, int inLen, byte[] out, int outOff);
+
+  private native int destoryCipherContext(long context);
 }
