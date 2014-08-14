@@ -21,8 +21,6 @@ package com.intel.diceros.crypto.modes;
 import java.nio.ByteBuffer;
 import java.security.ProviderException;
 
-import javax.crypto.IllegalBlockSizeException;
-
 import com.intel.diceros.crypto.BlockCipher;
 import com.intel.diceros.crypto.DataLengthException;
 import com.intel.diceros.crypto.params.CipherParameters;
