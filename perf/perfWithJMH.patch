@@ -1,13 +1,11 @@
 diff --git a/pom.xml b/pom.xml
-index 7a1e84d..1cc3179 100644
+index 76a3497..af158fb 100644
 --- a/pom.xml
 +++ b/pom.xml
-@@ -54,7 +54,16 @@
-             <groupId>junit</groupId>
-             <artifactId>junit</artifactId>
-             <version>3.8.1</version>
--            <scope>runtime</scope>
-+        </dependency>
+@@ -66,6 +66,16 @@
+             <version>3.3</version>
+             <scope>compile</scope>
+         </dependency>
 +        <dependency>
 +            <groupId>org.openjdk.jmh</groupId>
 +            <artifactId>jmh-core</artifactId>
@@ -17,12 +15,13 @@ index 7a1e84d..1cc3179 100644
 +            <groupId>org.openjdk.jmh</groupId>
 +            <artifactId>jmh-generator-annprocess</artifactId>
 +            <version>0.8</version>
-         </dependency>
++        </dependency>
      </dependencies>
  
-@@ -71,6 +80,27 @@
-                 </configuration>
+     <build>
+@@ -82,6 +92,27 @@
              </plugin>
+ 
              <plugin>
 +                <groupId>org.apache.maven.plugins</groupId>
 +                <artifactId>maven-shade-plugin</artifactId>
@@ -46,14 +45,14 @@ index 7a1e84d..1cc3179 100644
 +            </plugin>
 +            <plugin>
                  <groupId>org.codehaus.mojo</groupId>
-                 <artifactId>native-maven-plugin</artifactId>
-                 <version>1.0-alpha-7</version>
+                 <artifactId>build-helper-maven-plugin</artifactId>
+                 <version>1.9</version>
 diff --git a/src/main/java/com/intel/diceros/perf/AESPerfTestWithJMH.java b/src/main/java/com/intel/diceros/perf/AESPerfTestWithJMH.java
 new file mode 100644
-index 0000000..8b1fb7c
+index 0000000..2a5a7e9
 --- /dev/null
 +++ b/src/main/java/com/intel/diceros/perf/AESPerfTestWithJMH.java
-@@ -0,0 +1,239 @@
+@@ -0,0 +1,251 @@
 +/**
 + * Licensed to the Apache Software Foundation (ASF) under one
 + * or more contributor license agreements.  See the NOTICE file
@@ -84,6 +83,8 @@ index 0000000..8b1fb7c
 +import javax.crypto.IllegalBlockSizeException;
 +import javax.crypto.ShortBufferException;
 +import javax.crypto.spec.IvParameterSpec;
++import javax.crypto.spec.GCMParameterSpec;
++import java.security.spec.AlgorithmParameterSpec;
 +import javax.crypto.spec.SecretKeySpec;
 +
 +import org.openjdk.jmh.annotations.GenerateMicroBenchmark;
@@ -108,9 +109,10 @@ index 0000000..8b1fb7c
 +public class AESPerfTestWithJMH {
 +  private static final SecureRandom rand = new SecureRandom();
 +  private static String[] SUN_JCE_MODES =
-+      {"AES/CTR/NoPadding", "AES/CBC/NoPadding", "AES/CBC/PKCS5Padding"};
++      {"AES/CTR/NoPadding", "AES/CBC/NoPadding", "AES/CBC/PKCS5Padding", "AES/GCM/NoPadding"};
 +  private static String[] DICEROS_MODES =
-+      {"AES/CTR/NoPadding", "AES/CBC/NoPadding", "AES/CBC/PKCS5Padding", "AES/MBCBC/PKCS5Padding"};
++      {"AES/CTR/NoPadding", "AES/CBC/NoPadding", "AES/CBC/PKCS5Padding", "AES/MBCBC/PKCS5Padding",
++       "AES/XTS/NoPadding", "AES/GCM/NoPadding"};
 +  private static Map<String, String[]> providerModes =
 +      new HashMap<String, String[]>();
 +
@@ -191,7 +193,7 @@ index 0000000..8b1fb7c
 +    byte[] key;
 +    byte[] iv;
 +    //random generate the key and iv for cipher
-+    key = new byte[16];
++    key = new byte[32];
 +    iv = new byte[16];
 +    rand.nextBytes(key);
 +    rand.nextBytes(iv);
@@ -208,16 +210,25 @@ index 0000000..8b1fb7c
 +    if (!mode.contains("NoPadding")) {
 +      encryptResultSize = INPUT_BUFFER_SIZE + 16 - (INPUT_BUFFER_SIZE % 16);
 +      decryptResultSize = INPUT_BUFFER_SIZE + 16 - (INPUT_BUFFER_SIZE % 16);
++    } else if (mode.contains("GCM")) {
++      encryptResultSize = INPUT_BUFFER_SIZE + 16;
++      decryptResultSize = INPUT_BUFFER_SIZE;
 +    }
 +
 +    //initialize the cipher for encrypt or decrypt
 +    try {
 +      enc = Cipher.getInstance(this.mode, this.provider);
 +      dec = Cipher.getInstance(this.mode, this.provider);
++      AlgorithmParameterSpec paramSpec;
++      if (mode.contains("GCM")) {
++        paramSpec = new GCMParameterSpec(128, iv);
++      } else {
++        paramSpec = new IvParameterSpec(iv);
++      }
 +      enc.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"),
-+          new IvParameterSpec(iv));
++          paramSpec);
 +      dec.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"),
-+          new IvParameterSpec(iv));
++          paramSpec);
 +    } catch (Exception e) {
 +      throw new RuntimeException("AES failed initialisation - " + e.toString(),
 +          e);
