@@ -21,11 +21,9 @@ package com.intel.diceros.provider.symmetric;
 import com.intel.diceros.crypto.BlockCipher;
 import com.intel.diceros.crypto.engines.AESMutliBufferEngine;
 import com.intel.diceros.crypto.engines.AESOpensslEngine;
-import com.intel.diceros.provider.config.ConfigurableProvider;
 import com.intel.diceros.provider.symmetric.util.BaseBlockCipher;
 import com.intel.diceros.provider.symmetric.util.BlockCipherProvider;
 import com.intel.diceros.provider.symmetric.util.Constants;
-import com.intel.diceros.provider.util.AlgorithmProvider;
 
 import javax.crypto.*;
 import java.nio.ByteBuffer;
@@ -34,7 +32,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class implements the AES algorithm in the mode <code>CTR</code>,
- * <code>CBC</code> and <code>MBCBC</code>.
+ * <code>CBC</code>, <code>XTS</code> and <code>MBCBC</code>.
  */
 public class AES {
   private AES() {
@@ -825,25 +823,6 @@ public class AES {
       } else {
         return defaultCipher.doFinal(input, output);
       }
-    }
-  }
-
-  public static class Mappings extends AlgorithmProvider {
-    private static final String PREFIX = AES.class.getName(); // the outer class
-    // name
-
-    public Mappings() {
-    }
-
-    @Override
-    public void configure(ConfigurableProvider provider) {
-      provider.addAlgorithm("Cipher.AES", PREFIX + "$CTR");
-      provider.addAlgorithm("Cipher.AES/CTR", PREFIX + "$CTR");
-      provider.addAlgorithm("Cipher.AES/CBC", PREFIX + "$CBC");
-      provider.addAlgorithm("Cipher.AES/MBCBC", PREFIX + "$MBCBC");
-      provider.addAlgorithm("Cipher.AES/XTS", PREFIX + "$XTS");
-      provider.addAlgorithm("Cipher.AES SupportedModes", "CTR128|CTR192|CTR256|CTR|CBC128|CBC192|CBC256|CBC|XTS|XTS128|XTS256");
-      provider.addAlgorithm("Cipher.AES SupportedPaddings", "NOPADDING|PKCS5PADDING");
     }
   }
 }

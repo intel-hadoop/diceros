@@ -58,13 +58,13 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>3.8.1</version>
-            <scope>runtime</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
             <version>3.3</version>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
@@ -80,6 +80,27 @@
                     <showDeprecation>false</showDeprecation>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>1.9</version>
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${additionalSourceDirectory}</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>native-maven-plugin</artifactId>
@@ -152,6 +173,26 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>jdk16</id>
+            <properties>
+                <additionalSourceDirectory>src/common</additionalSourceDirectory>
+            </properties>
+            <activation>
+                <jdk>[1.4,1.6]</jdk>
+            </activation>
+        </profile>
+
+        <profile>
+            <id>jdk17</id>
+            <properties>
+                <additionalSourceDirectory>src/1.7</additionalSourceDirectory>
+            </properties>
+            <activation>
+                <jdk>[1.7,1.8]</jdk>
+            </activation>
+        </profile>
+
         <profile>
             <id>sign</id>
             <activation>

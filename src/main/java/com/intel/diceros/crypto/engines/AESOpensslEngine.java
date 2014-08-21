@@ -81,6 +81,11 @@ public class AESOpensslEngine implements BlockCipher {
   }
 
   @Override
+  public int getIVSize() {
+    return getBlockSize();
+  }
+
+  @Override
   public int processBlock(byte[] in, int inOff, int inLen, byte[] out,
       int outOff) throws DataLengthException, IllegalStateException {
     checkCipherInit();
@@ -117,19 +122,6 @@ public class AESOpensslEngine implements BlockCipher {
         output.position(), isUpdate);
   }
 
-  private native int processByteBuffer(long context, ByteBuffer input, int inputPos,
-      int inputLimit, ByteBuffer output, int outputPos, boolean isUpdate);
-
-  private native long initWorkingKey(byte[] key, boolean forEncryption,
-      int mode, int padding, byte[] IV, long aesContext);
-
-  private native int processBlock(long context, byte[] in, int inOff,
-      int inLen, byte[] out, int outOff);
-
-  private native int doFinal(long context, byte[] out, int outOff);
-
-  private native int destoryCipherContext(long context);
-
   @Override
   public void setIV(byte[] IV) {
     this.IV = IV;
@@ -155,6 +147,32 @@ public class AESOpensslEngine implements BlockCipher {
     return 0;
   }
 
+  @Override
+  public void setTag(byte[] tag, int tagOff, int tLen) {
+    setTag(aesContext, tag, tagOff, tLen);
+  }
+
+  @Override
+  public void getTag(byte[] out, int outOff, int tLen) {
+    getTag(aesContext, out, outOff, tLen);
+  }
+
+  @Override
+  public int getTagLen(){
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void updateAAD(byte[] src, int offset, int len) {
+    updateAADFromByteArray(aesContext, src, offset, len);
+  }
+
+  @Override
+  public void updateAAD(ByteBuffer src) {
+    updateAADFromByteBuffer(aesContext, src, src.position(), src.limit());
+    src.position(src.limit());
+  }
+
   private void checkCipherInit() {
     if (aesContext == 0) {
       init(forEncryption, params);
@@ -173,4 +191,23 @@ public class AESOpensslEngine implements BlockCipher {
     }
     return false;
   }
+
+  private native int processByteBuffer(long context, ByteBuffer input, int inputPos,
+      int inputLimit, ByteBuffer output, int outputPos, boolean isUpdate);
+
+  private native long initWorkingKey(byte[] key, boolean forEncryption,
+      int mode, int padding, byte[] IV, long aesContext);
+
+  private native int processBlock(long context, byte[] in, int inOff,
+      int inLen, byte[] out, int outOff);
+
+  private native int doFinal(long context, byte[] out, int outOff);
+
+  private native int destoryCipherContext(long context);
+
+  private native void setTag(long context, byte[] tag, int tagOff, int tLen);
+  private native void getTag(long context, byte[] out, int outOff, int tLen);
+
+  private native void updateAADFromByteArray(long context, byte[] src, int offset, int len);
+  private native void updateAADFromByteBuffer(long context, ByteBuffer src, int inputPos, int inputLimit);
 }

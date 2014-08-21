@@ -30,7 +30,7 @@ import java.security.Provider;
  * <p/>
  * <p>Defines the "DC" provider.
  * <p>Supported algorithms and their names:
- * <p>- AES (CTR mode, CBC mode, MBCBC mode)
+ * <p>- AES (CTR mode, CBC mode, MBCBC mode, XTS mode, GCM mode)
  * <p>- SecureRandom (DRNG)
  */
 public final class DicerosProvider extends Provider implements
@@ -41,11 +41,11 @@ public final class DicerosProvider extends Provider implements
   private static final long serialVersionUID = -5933716767994628685L;
 
   private static String info = "Diceros Provider v1.0, implementing AES encryption of CTR mode," +
-      "CBC mode, MBCBC mode and SecureRandom based on DRNG";
+      "CBC mode, MBCBC mode, XTS mode, GCM mode and SecureRandom based on DRNG";
   private static final String SYMMETRIC_PACKAGE = "com.intel.diceros.provider.symmetric.";
-  private static final String[] SYMMETRIC_CIPHERS = {"AES"};
+  private static final String[] SYMMETRIC_CIPHERS = {"AESAlgorithmProvider"};
   private static final String SECURERANDOM_PACKAGE = "com.intel.diceros.provider.securerandom.";
-  private static final String[] SECURERANDOM = {"SecureRandom"};
+  private static final String[] SECURERANDOM = {"SecureRandomAlgorithmProvider"};
 
   public DicerosProvider() {
     super(PROVIDER_NAME, 1.0, info);
@@ -73,9 +73,9 @@ public final class DicerosProvider extends Provider implements
         ClassLoader loader = this.getClass().getClassLoader();
 
         if (loader != null) {
-          clazz = loader.loadClass(packageName + names[i] + "$Mappings");
+          clazz = loader.loadClass(packageName + names[i]);
         } else {
-          clazz = Class.forName(packageName + names[i] + "$Mappings");
+          clazz = Class.forName(packageName + names[i]);
         }
       } catch (ClassNotFoundException e) {
         // ignore
@@ -86,7 +86,7 @@ public final class DicerosProvider extends Provider implements
           ((AlgorithmProvider) clazz.newInstance()).configure(this);
         } catch (Exception e) { // this should never ever happen!!
           throw new InternalError("cannot create instance of " + packageName
-                  + names[i] + "$Mappings : " + e);
+                  + names[i] + " : " + e);
         }
       }
     }

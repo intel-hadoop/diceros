@@ -18,9 +18,6 @@
 
 package com.intel.diceros.provider.securerandom;
 
-import com.intel.diceros.provider.config.ConfigurableProvider;
-import com.intel.diceros.provider.util.AlgorithmProvider;
-
 import java.nio.ByteBuffer;
 import java.security.SecureRandomSpi;
 
@@ -199,20 +196,5 @@ public class SecureRandom {
     private native boolean drngRandBytes(byte[] buffer);
 
     private native int drngRandBytes(ByteBuffer directBuffer);
-  }
-
-  public static class Mappings extends AlgorithmProvider {
-    private static final String PREFIX = SecureRandom.class.getName(); // the
-    // outer
-    // class
-    // name
-
-    public Mappings() {
-    }
-
-    @Override
-    public void configure(ConfigurableProvider provider) {
-      provider.addAlgorithm("SecureRandom.DRNG", PREFIX + "$DRNG");
-    }
   }
 }

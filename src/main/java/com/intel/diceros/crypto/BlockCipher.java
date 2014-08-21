@@ -51,6 +51,8 @@ public interface BlockCipher {
    */
   public int getBlockSize();
 
+  public int getIVSize();
+
   /**
    * Set the initialization vector (IV) for the cipher.
    *
@@ -131,4 +133,11 @@ public interface BlockCipher {
    * This method is used by Multi-Buffer which need 2-byte head.
    */
   public int getHeadLength();
+
+  public void setTag(byte[] tag, int tagOff, int tLen);
+  public void getTag(byte[] out, int outOff, int tLen);
+  public int getTagLen();
+
+  public void updateAAD(byte[] src, int offset, int len);
+  public void updateAAD(ByteBuffer src);
 }

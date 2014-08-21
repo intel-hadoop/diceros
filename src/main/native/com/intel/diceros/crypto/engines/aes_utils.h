@@ -39,6 +39,7 @@
 #define MODE_CTR 0
 #define MODE_CBC 1
 #define MODE_XTS 2
+#define MODE_GCM 3
 
 #define PADDING_NOPADDING 0
 #define PADDING_PKCS5PADDING 1

@@ -28,6 +28,8 @@ import com.intel.diceros.crypto.modes.XTSBlockCipher;
 import com.intel.diceros.crypto.params.CipherParameters;
 import com.intel.diceros.crypto.params.KeyParameter;
 import com.intel.diceros.crypto.params.ParametersWithIV;
+import com.intel.diceros.crypto.spec.SupportedSpecImpl;
+import com.intel.diceros.crypto.spec.SupportedSpecSpi;
 import com.intel.diceros.provider.DicerosProvider;
 
 import javax.crypto.*;
@@ -42,13 +44,10 @@ import java.util.Locale;
  * Base Class for BlockCipher.
  */
 public abstract class BaseBlockCipher extends CipherSpi {
-  @SuppressWarnings("rawtypes")
-  private Class[] availableSpecs = {IvParameterSpec.class};
-
-  private GenericBlockCipher cipher; // wrapping baseEngine, do some preprocessing work
-  private ParametersWithIV ivParam; // parameter of key data, initialization vector, etc
-  private int ivLength = 0; // the initialization vector length
-  protected AlgorithmParameters engineParams;
+  protected GenericBlockCipher cipher; // wrapping baseEngine, do some preprocessing work
+  protected ParametersWithIV ivParam; // parameter of key data, initialization vector, etc
+  protected int ivLength = -1; // the initialization vector length
+  private SupportedSpecSpi supportedSpec;
 
   /**
    * Constructor
@@ -58,6 +57,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
    */
   protected BaseBlockCipher(BlockCipher engine) {
     cipher = new GenericBlockCipherImpl(engine);
+    supportedSpec = new SupportedSpecImpl();
   }
 
   /**
@@ -80,7 +80,8 @@ public abstract class BaseBlockCipher extends CipherSpi {
       cipher = new GenericBlockCipherImpl(baseEngine);
     }
 
-    ivLength = baseEngine.getBlockSize();
+    ivLength = baseEngine.getIVSize();
+    supportedSpec = new SupportedSpecImpl();
   }
 
   @Override
@@ -109,22 +110,35 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
   @Override
   protected AlgorithmParameters engineGetParameters() {
-    if (engineParams == null && ivParam != null) {
-      String name = cipher.getUnderlyingCipher().getAlgorithmName();
+    AlgorithmParameters engineParams;
+    String name = cipher.getUnderlyingCipher().getAlgorithmName();
 
-      if (name.indexOf('/') >= 0) {
-        name = name.substring(0, name.indexOf('/'));
-      }
+    if (name.indexOf('/') >= 0) {
+      name = name.substring(0, name.indexOf('/'));
+    }
 
-      try {
-        engineParams = AlgorithmParameters.getInstance(name);
-        engineParams.init(ivParam.getIV());
-      } catch (Exception e) {
-        throw new RuntimeException(e.toString());
-      }
+    try {
+      engineParams = AlgorithmParameters.getInstance(name);
+      engineParams.init(getAlgorithmParametersSpec());
+    } catch (Exception e) {
+      throw new RuntimeException(e.toString());
     }
 
     return engineParams;
+  }
+
+  protected AlgorithmParameterSpec getAlgorithmParametersSpec()
+      throws NoSuchAlgorithmException, NoSuchProviderException {
+    byte[] iv = ivParam.getIV();
+    if (iv == null) {
+      if (cipher.getUnderlyingCipher().getMode() == Constants.MODE_GCM) {
+        iv = new byte[Constants.GCM_DEFAULT_IV_LEN];
+      } else {
+        iv = new byte[cipher.getBlockSize()];
+      }
+      SecureRandom.getInstance("DRNG", "DC").nextBytes(iv);
+    }
+    return new IvParameterSpec(iv);
   }
 
   @Override
@@ -133,7 +147,8 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
     if (!modeName.startsWith("CTR")
         && !modeName.startsWith("CBC")
-        && !modeName.startsWith("XTS")) {
+        && !modeName.startsWith("XTS")
+        && !modeName.startsWith("GCM")) {
       throw new NoSuchAlgorithmException("can't support mode " + mode);
     }
   }
@@ -152,56 +167,12 @@ public abstract class BaseBlockCipher extends CipherSpi {
   @Override
   protected void engineInit(int opmode, Key key, AlgorithmParameterSpec params,
       SecureRandom random) throws InvalidKeyException, InvalidAlgorithmParameterException {
-    CipherParameters param;
-    this.engineParams = null;
-    // basic key check
     if (!(key instanceof SecretKey)) {
       throw new InvalidKeyException("Key for algorithm " + key.getAlgorithm()
               + " not suitable for symmetric enryption.");
     }
 
-    // a note on iv's - if ivLength is zero the IV gets ignored (we don't use it).
-    if (params == null) {
-      param = new KeyParameter(key.getEncoded());
-    } else if (params instanceof IvParameterSpec) {
-      if (ivLength != 0) {
-        IvParameterSpec p = (IvParameterSpec) params;
-        if (p.getIV().length != ivLength) {
-          throw new InvalidAlgorithmParameterException("IV must be " + ivLength
-                  + " bytes long.");
-        }
-        param = new ParametersWithIV(new KeyParameter(key.getEncoded()),
-                p.getIV());
-        ivParam = (ParametersWithIV) param;
-      } else {
-        param = new KeyParameter(key.getEncoded());
-      }
-    } else {
-      throw new InvalidAlgorithmParameterException("unknown parameter type.");
-    }
-
-    if ((ivLength != 0) && !(param instanceof ParametersWithIV)) {
-      SecureRandom ivRandom = random;
-      if (ivRandom == null) {
-        try {
-          ivRandom = SecureRandom.getInstance("DRNG",
-                  DicerosProvider.PROVIDER_NAME);
-        } catch (Exception e) {
-          ivRandom = new SecureRandom();
-        }
-      }
-
-      if ((opmode == Cipher.ENCRYPT_MODE) || (opmode == Cipher.WRAP_MODE)) {
-        byte[] iv = new byte[ivLength];
-        ivRandom.nextBytes(iv);
-        param = new ParametersWithIV(param, iv);
-        ivParam = (ParametersWithIV) param;
-      } else {
-        throw new InvalidAlgorithmParameterException(
-                "no IV set when one expected");
-      }
-    }
-
+    CipherParameters param = retrieveParam(opmode, key, params, random);
     try {
       switch (opmode) {
         case Cipher.ENCRYPT_MODE:
@@ -221,11 +192,72 @@ public abstract class BaseBlockCipher extends CipherSpi {
     }
   }
 
-  @SuppressWarnings("unchecked")
+  protected ParametersWithIV retrieveParam(int opmode, Key key,
+      AlgorithmParameterSpec params, SecureRandom random)
+          throws InvalidKeyException, InvalidAlgorithmParameterException {
+    ParametersWithIV param = retrieveParam(key, params);
+
+    if (ivLength >= 0 && param.getIV() == null) {
+      if ((opmode == Cipher.ENCRYPT_MODE) || (opmode == Cipher.WRAP_MODE)) {
+        SecureRandom ivRandom = random;
+        if (ivRandom == null) {
+          try {
+            ivRandom = SecureRandom.getInstance("DRNG",
+                    DicerosProvider.PROVIDER_NAME);
+          } catch (Exception e) {
+            ivRandom = new SecureRandom();
+          }
+        }
+
+        byte[] iv = null;
+        if (ivLength == 0 &&
+            cipher.getUnderlyingCipher().getMode() == Constants.MODE_GCM) {
+          // default IV size for GCM mode is 96 bit.
+          iv = new byte[Constants.GCM_DEFAULT_IV_LEN];
+        } else if (ivLength > 0) {
+          iv = new byte[ivLength];
+        }
+        ivRandom.nextBytes(iv);
+        param.setIV(iv);
+      } else {
+        throw new InvalidAlgorithmParameterException(
+                "no IV set when one expected");
+      }
+    }
+
+    return param;
+  }
+
+  protected ParametersWithIV retrieveParam(Key key, AlgorithmParameterSpec params)
+      throws InvalidAlgorithmParameterException {
+    KeyParameter keyParam = new KeyParameter(key.getEncoded());
+    byte[] iv = null;
+    if (params == null) {
+      iv = null;
+    } else if (params instanceof IvParameterSpec) {
+      if (ivLength > 0) {
+        iv = ((IvParameterSpec)params).getIV();
+        if (iv == null || iv.length != ivLength) {
+          throw new InvalidAlgorithmParameterException("IV must be " + ivLength
+                  + " bytes long.");
+        }
+      }
+    } else {
+      throw new InvalidAlgorithmParameterException("unknown parameter type.");
+    }
+    ParametersWithIV cipherParam = new ParametersWithIV(keyParam, iv);
+
+    ivParam = cipherParam;
+
+    return cipherParam;
+  }
+
   @Override
   protected void engineInit(int opmode, Key key, AlgorithmParameters params,
       SecureRandom random) throws InvalidKeyException, InvalidAlgorithmParameterException {
     AlgorithmParameterSpec paramSpec = null;
+    Class<? extends AlgorithmParameterSpec>[] availableSpecs =
+        supportedSpec.getSupportedSpecs();
     if (params != null) {
       for (int i = 0; i != availableSpecs.length; i++) {
         try {
@@ -242,7 +274,6 @@ public abstract class BaseBlockCipher extends CipherSpi {
     }
 
     engineInit(opmode, key, paramSpec, random);
-    engineParams = params;
   }
 
   @Override
@@ -385,7 +416,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
     return cipher.doFinal(input, output);
   }
 
-  static private interface GenericBlockCipher {
+  static public interface GenericBlockCipher {
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException;
 
@@ -408,6 +439,11 @@ public abstract class BaseBlockCipher extends CipherSpi {
     public int doFinal(ByteBuffer input, ByteBuffer output) throws ShortBufferException;
 
     public void setPadding(String padding) throws NoSuchPaddingException;
+
+    public void updateAAD(byte[] src, int offset, int len);
+    public void updateAAD(ByteBuffer src);
+
+    public boolean isEncryption();
   }
 
   private static class GenericBlockCipherImpl implements GenericBlockCipher {
@@ -468,8 +504,17 @@ public abstract class BaseBlockCipher extends CipherSpi {
         return 0;
       }
       int totalLen = buffered + len;
-      if (padding == Constants.PADDING_NOPADDING)
-        return totalLen;
+      if (padding == Constants.PADDING_NOPADDING) {
+        if (cipher.getMode() != Constants.MODE_GCM) {
+          return totalLen;
+        } else {
+          if (forEncryption) {
+            return cipher.getTagLen() + totalLen;
+          } else {
+            return totalLen;
+          }
+        }
+      }
       if (!forEncryption)
         return totalLen;
       if (totalLen < blockSize)
@@ -620,6 +665,18 @@ public abstract class BaseBlockCipher extends CipherSpi {
       }
 
       cipher.setPadding(padding);
+    }
+
+    public void updateAAD(byte[] src, int offset, int len) {
+      cipher.updateAAD(src, offset, len);
+    }
+
+    public void updateAAD(ByteBuffer src) {
+      cipher.updateAAD(src);
+    }
+
+    public boolean isEncryption() {
+      return this.forEncryption;
     }
   }
 }

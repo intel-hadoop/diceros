@@ -16,20 +16,19 @@
  * limitations under the License.
  */
 
-package com.intel.diceros.provider.symmetric.util;
+package com.intel.diceros.provider.securerandom;
 
-public class Constants {
-  public static final int MODE_CTR = 0;
-  public static final int MODE_CBC = 1;
-  public static final int MODE_XTS = 2;
-  public static final int MODE_GCM = 3;
+import com.intel.diceros.provider.config.ConfigurableProvider;
+import com.intel.diceros.provider.util.AlgorithmProvider;
 
-  public static final int PADDING_NOPADDING = 0;
-  public static final int PADDING_PKCS5PADDING = 1;
+public class SecureRandomAlgorithmProvider extends AlgorithmProvider{
+  private static final String PREFIX = SecureRandom.class.getName();
 
-  public static final int AES_BLOCK_SIZE = 16;
-  public static final int[] AES_KEYSIZES = {16, 24, 32};
+  public SecureRandomAlgorithmProvider() {
+  }
 
-  public static final int GCM_DEFAULT_IV_LEN = 12;
-  public static final int GCM_DEFAULT_TAG_LEN = AES_BLOCK_SIZE;
+  @Override
+  public void configure(ConfigurableProvider provider) {
+    provider.addAlgorithm("SecureRandom.DRNG", PREFIX + "$DRNG");
+  }
 }

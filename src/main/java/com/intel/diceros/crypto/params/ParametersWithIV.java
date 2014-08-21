@@ -27,7 +27,15 @@ public class ParametersWithIV implements CipherParameters {
   private CipherParameters parameters;
 
   public ParametersWithIV(CipherParameters parameters, byte[] iv) {
-    this(parameters, iv, 0, iv.length);
+    if (iv != null) {
+      this.iv = new byte[iv.length];
+      this.parameters = parameters;
+
+      System.arraycopy(iv, 0, this.iv, 0, iv.length);
+    } else {
+      this.parameters = parameters;
+      this.iv = null;
+    }
   }
 
   public ParametersWithIV(CipherParameters parameters, byte[] iv, int ivOff,
@@ -40,6 +48,10 @@ public class ParametersWithIV implements CipherParameters {
 
   public byte[] getIV() {
     return iv;
+  }
+
+  public void setIV(byte[] iv) {
+    this.iv = iv;
   }
 
   public CipherParameters getParameters() {

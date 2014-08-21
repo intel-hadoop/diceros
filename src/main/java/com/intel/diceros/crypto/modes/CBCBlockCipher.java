@@ -30,7 +30,6 @@ import java.nio.ByteBuffer;
  * Implements Cipher-Block-Chaining (CBC) mode on top of a simple cipher.
  */
 public class CBCBlockCipher implements BlockCipher {
-  private int blockSize;
   private BlockCipher cipher = null;
   private boolean encrypting;
 
@@ -41,7 +40,6 @@ public class CBCBlockCipher implements BlockCipher {
    */
   public CBCBlockCipher(BlockCipher cipher) {
     this.cipher = cipher;
-    this.blockSize = cipher.getBlockSize();
   }
 
   /**
@@ -77,12 +75,17 @@ public class CBCBlockCipher implements BlockCipher {
 
   @Override
   public String getAlgorithmName() {
-    return cipher.getAlgorithmName() + "/CBC" + (blockSize * 8);
+    return cipher.getAlgorithmName() + "/CBC";
   }
 
   @Override
   public int getBlockSize() {
     return cipher.getBlockSize();
+  }
+
+  @Override
+  public int getIVSize() {
+    return getBlockSize();
   }
 
   @Override
@@ -142,5 +145,30 @@ public class CBCBlockCipher implements BlockCipher {
   @Override
   public int getHeadLength() {
     return cipher.getHeadLength();
+  }
+
+  @Override
+  public void setTag(byte[] tag, int tagOff, int tLen) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void getTag(byte[] out, int outOff, int tLen) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public int getTagLen(){
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void updateAAD(byte[] src, int offset, int len) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void updateAAD(ByteBuffer src) {
+    throw new UnsupportedOperationException();
   }
 }

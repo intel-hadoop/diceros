@@ -54,21 +54,26 @@ public class CTRBlockCipher implements BlockCipher {
         cipher.init(forEncryption, param);
       } else {
         throw new IllegalArgumentException(
-                "CTR mode requires ParametersWithIV");
+                "CTR mode requires IvParameterSpec");
       }
     } else {
-      throw new IllegalArgumentException("CTR mode requires ParametersWithIV");
+      throw new IllegalArgumentException("CTR mode requires IvParameterSpec");
     }
   }
 
   @Override
   public String getAlgorithmName() {
-    return cipher.getAlgorithmName() + "/CTR" + (getBlockSize() * 8);
+    return cipher.getAlgorithmName() + "/CTR";
   }
 
   @Override
   public int getBlockSize() {
     return cipher.getBlockSize();
+  }
+
+  @Override
+  public int getIVSize() {
+    return getBlockSize();
   }
 
   @Override
@@ -115,5 +120,30 @@ public class CTRBlockCipher implements BlockCipher {
   @Override
   public int getHeadLength() {
     return cipher.getHeadLength();
+  }
+
+  @Override
+  public void setTag(byte[] tag, int tagOff, int tLen) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void getTag(byte[] out, int outOff, int tLen) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public int getTagLen(){
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void updateAAD(byte[] src, int offset, int len) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void updateAAD(ByteBuffer src) {
+    throw new UnsupportedOperationException();
   }
 }

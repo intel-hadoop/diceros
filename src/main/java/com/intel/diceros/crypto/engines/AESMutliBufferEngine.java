@@ -72,6 +72,11 @@ public class AESMutliBufferEngine implements BlockCipher {
   }
 
   @Override
+  public int getIVSize() {
+    return getBlockSize();
+  }
+
+  @Override
   public int processBlock(byte[] in, int inOff, int inLen, byte[] out,
       int outOff) throws DataLengthException, IllegalStateException {
     checkCipherInit();
@@ -133,6 +138,31 @@ public class AESMutliBufferEngine implements BlockCipher {
   @Override
   public int getHeadLength() {
     return 2;
+  }
+
+  @Override
+  public void setTag(byte[] tag, int tagOff, int tLen) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void getTag(byte[] out, int outOff, int tLen) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public int getTagLen(){
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void updateAAD(byte[] src, int offset, int len) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void updateAAD(ByteBuffer src) {
+    throw new UnsupportedOperationException();
   }
 
   private void checkCipherInit() {

@@ -47,21 +47,26 @@ public class XTSBlockCipher implements BlockCipher{
         cipher.init(forEncryption, param);
       } else {
         throw new IllegalArgumentException(
-                "XTS mode requires ParametersWithIV");
+                "XTS mode requires IvParameterSpec");
       }
     } else {
-      throw new IllegalArgumentException("XTS mode requires ParametersWithIV");
+      throw new IllegalArgumentException("XTS mode requires IvParameterSpec");
     }
   }
 
   @Override
   public String getAlgorithmName() {
-    return cipher.getAlgorithmName() + "/XTS" + (getBlockSize() * 8);
+    return cipher.getAlgorithmName() + "/XTS";
   }
 
   @Override
   public int getBlockSize() {
     return cipher.getBlockSize();
+  }
+
+  @Override
+  public int getIVSize() {
+    return getBlockSize();
   }
 
   @Override
@@ -116,5 +121,30 @@ public class XTSBlockCipher implements BlockCipher{
   @Override
   public int getHeadLength() {
     return cipher.getHeadLength();
+  }
+
+  @Override
+  public void setTag(byte[] tag, int tagOff, int tLen) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void getTag(byte[] out, int outOff, int tLen) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public int getTagLen(){
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void updateAAD(byte[] src, int offset, int len) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void updateAAD(ByteBuffer src) {
+    throw new UnsupportedOperationException();
   }
 }

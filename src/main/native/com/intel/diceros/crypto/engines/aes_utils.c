@@ -98,6 +98,17 @@ EVP_CIPHER* getCipher(int mode, int keyLen) {
     default:
       return NULL;
     }
+  } else if (mode == MODE_GCM) {
+    switch (keyLen) {
+    case 16:
+      return EVP_aes_128_gcm();
+    case 24:
+      return EVP_aes_192_gcm();
+    case 32:
+      return EVP_aes_256_gcm();
+    default:
+      return NULL;
+    }
   }
   return NULL;
 }

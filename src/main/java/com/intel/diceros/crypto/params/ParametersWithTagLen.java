@@ -16,20 +16,17 @@
  * limitations under the License.
  */
 
-package com.intel.diceros.provider.symmetric.util;
+package com.intel.diceros.crypto.params;
 
-public class Constants {
-  public static final int MODE_CTR = 0;
-  public static final int MODE_CBC = 1;
-  public static final int MODE_XTS = 2;
-  public static final int MODE_GCM = 3;
+public class ParametersWithTagLen extends ParametersWithIV {
+  private int tLen;
 
-  public static final int PADDING_NOPADDING = 0;
-  public static final int PADDING_PKCS5PADDING = 1;
+  public ParametersWithTagLen(CipherParameters parameters, byte[] iv, int tLen) {
+    super(parameters, iv);
+    this.tLen = tLen;
+  }
 
-  public static final int AES_BLOCK_SIZE = 16;
-  public static final int[] AES_KEYSIZES = {16, 24, 32};
-
-  public static final int GCM_DEFAULT_IV_LEN = 12;
-  public static final int GCM_DEFAULT_TAG_LEN = AES_BLOCK_SIZE;
+  public int getTLen() {
+    return tLen;
+  }
 }
