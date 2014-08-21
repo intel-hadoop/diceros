@@ -176,7 +176,7 @@
         <profile>
             <id>jdk16</id>
             <properties>
-                <additionalSourceDirectory>src/common</additionalSourceDirectory>
+                <additionalSourceDirectory>src/common/main/java</additionalSourceDirectory>
             </properties>
             <activation>
                 <jdk>[1.4,1.6]</jdk>
@@ -186,7 +186,7 @@
         <profile>
             <id>jdk17</id>
             <properties>
-                <additionalSourceDirectory>src/1.7</additionalSourceDirectory>
+                <additionalSourceDirectory>src/1.7/main/java</additionalSourceDirectory>
             </properties>
             <activation>
                 <jdk>[1.7,1.8]</jdk>

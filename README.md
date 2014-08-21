@@ -2,7 +2,8 @@ Diceros
 ===============
 
 Diceros is a sub-project of Rhino project which focus on providing a hardware accelerated JCE provider. Initial effort include:
-* AES-NI enabled AES/CTR/NOPADDING encryption/decryption support
+* AES-NI enabled AES/CTR/NoPadding, AES/CBC/NoPadding, AES/CBC/PKCS5Padding, AES/MBCBC/NoPadding, AES/MBCBC/PKCS5Padding,
+ AES/XTS/NoPadding, AES/GCM/NoPadding encryption/decryption support
 * Hardware based true random generator (DRNG)
 
 Diceros is not a full featured JCE provider yet for now, but we will make continuous effort towards that goal. You can download 
@@ -28,10 +29,10 @@ https://github.com/intel-hadoop/diceros/wiki/Quick-Start
 `mvn package -Dyasm.prefix={yasm path}`
 
 ### Build RPM
-`mvn package -Drpm.install.prefix.default={default install path, should point to your jre home, for example: /usr/java/default/jre}`
+`mvn clean package -DskipTests -Psign,rpm -Drpm.install.prefix.default={default install path, should point to your jre home, for example: /usr/java/default/jre}`
 
 ### Sign the diceros jar file with keystore
-`mvn clean  package -DskipTests -Psign -Dkeystore.path={keystore path} -Dkeystore.alias={keystore.alias} -Dkeystore.password={keystore.password} -Dyasm.prefix={yasm path}`
+`mvn clean package -DskipTests -Psign -Dkeystore.path={keystore path} -Dkeystore.alias={keystore.alias} -Dkeystore.password={keystore.password} -Dyasm.prefix={yasm path}`
 
 ### Download Binary Releases
 https://github.com/intel-hadoop/diceros/releases

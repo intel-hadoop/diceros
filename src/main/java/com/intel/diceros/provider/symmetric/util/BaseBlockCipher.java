@@ -659,7 +659,8 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
       if ((padding != Constants.PADDING_NOPADDING)
           && (cipher.getMode() == Constants.MODE_CTR
-              || cipher.getMode() == Constants.MODE_XTS)) {
+              || cipher.getMode() == Constants.MODE_XTS
+              || cipher.getMode() == Constants.MODE_GCM)) {
         throw new NoSuchPaddingException(cipher.getAlgorithmName() +
             " mode must be used with NoPadding");
       }
