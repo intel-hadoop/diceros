@@ -149,11 +149,13 @@ public class AESOpensslEngine implements BlockCipher {
 
   @Override
   public void setTag(byte[] tag, int tagOff, int tLen) {
+    checkCipherInit();
     setTag(aesContext, tag, tagOff, tLen);
   }
 
   @Override
   public void getTag(byte[] out, int outOff, int tLen) {
+    checkCipherInit();
     getTag(aesContext, out, outOff, tLen);
   }
 
@@ -164,11 +166,13 @@ public class AESOpensslEngine implements BlockCipher {
 
   @Override
   public void updateAAD(byte[] src, int offset, int len) {
+    checkCipherInit();
     updateAADFromByteArray(aesContext, src, offset, len);
   }
 
   @Override
   public void updateAAD(ByteBuffer src) {
+    checkCipherInit();
     updateAADFromByteBuffer(aesContext, src, src.position(), src.limit());
     src.position(src.limit());
   }

@@ -511,7 +511,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
           if (forEncryption) {
             return cipher.getTagLen() + totalLen;
           } else {
-            return totalLen;
+            return totalLen - cipher.getTagLen();
           }
         }
       }

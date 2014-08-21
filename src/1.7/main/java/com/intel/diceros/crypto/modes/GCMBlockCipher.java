@@ -266,6 +266,7 @@ public class GCMBlockCipher implements BlockCipher{
 
   @Override
   public void reset() {
+    this.tagStartIndex = this.tagEndIndex = 0;
     cipher.reset();
   }
 
