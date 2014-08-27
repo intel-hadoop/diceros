@@ -295,6 +295,10 @@
                                             <location>${basedir}/target/native/target/usr/local/lib/libdiceros.so.${project.version}</location>
                                             <destination>libdiceros.so</destination>
                                         </source>
+                                        <source>
+                                            <location>${basedir}/target/native/target/usr/local/lib/libaesmb.so</location>
+                                            <destination>libaesmb.so</destination>
+                                        </source>
                                     </sources>
                                 </mapping>
                                 <mapping>

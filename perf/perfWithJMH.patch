@@ -208,8 +208,8 @@ index 0000000..2a5a7e9
 +    int encryptResultSize = INPUT_BUFFER_SIZE;
 +    int decryptResultSize = INPUT_BUFFER_SIZE;
 +    if (!mode.contains("NoPadding")) {
-+      encryptResultSize = INPUT_BUFFER_SIZE + 16 - (INPUT_BUFFER_SIZE % 16);
-+      decryptResultSize = INPUT_BUFFER_SIZE + 16 - (INPUT_BUFFER_SIZE % 16);
++      encryptResultSize = INPUT_BUFFER_SIZE + 16 - (INPUT_BUFFER_SIZE % 16) + 2;
++      decryptResultSize = INPUT_BUFFER_SIZE + 16 - (INPUT_BUFFER_SIZE % 16) + 2;
 +    } else if (mode.contains("GCM")) {
 +      encryptResultSize = INPUT_BUFFER_SIZE + 16;
 +      decryptResultSize = INPUT_BUFFER_SIZE;
