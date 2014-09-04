@@ -39,19 +39,10 @@ public class AES {
   }
 
   public static final class CTR extends BaseBlockCipher {
-    private static boolean DCProviderAvailable = true;
+    // Use the algorithm provided by default provider if Openssl is unavailable.
+    private static boolean DCProviderAvailable =
+        AESOpensslEngine.opensslEngineAvailable;
     private Cipher defaultCipher = null;
-
-    // load the libraries needed by AES algorithm, when failed, use the
-    // algorithm provided by default provider
-    static {
-      try {
-        System.loadLibrary("crypto");
-        System.loadLibrary("diceros");
-      } catch (UnsatisfiedLinkError e) {
-        DCProviderAvailable = false;
-      }
-    }
 
     /**
      * the constructor of CTR mode AES algorithm
@@ -69,7 +60,7 @@ public class AES {
       });
 
       if (!DCProviderAvailable) {
-        defaultCipher = Cipher.getInstance("AES/CTR/NoPadding");
+        defaultCipher = Cipher.getInstance("AES/CTR/NoPadding", "SunJCE");
       }
     }
 
@@ -231,19 +222,10 @@ public class AES {
   }
 
   public static final class CBC extends BaseBlockCipher {
-    protected static boolean DCProviderAvailable = true;
-    protected Cipher defaultCipher = null;
-
-    // load the libraries needed by AES algorithm, when failed, use the
-    // algorithm provided by default provider
-    static {
-      try {
-        System.loadLibrary("crypto");
-        System.loadLibrary("diceros");
-      } catch (UnsatisfiedLinkError e) {
-        DCProviderAvailable = false;
-      }
-    }
+    // Use the algorithm provided by default provider if Openssl is unavailable.
+    private static boolean DCProviderAvailable =
+        AESOpensslEngine.opensslEngineAvailable;
+    private Cipher defaultCipher = null;
 
     /**
      * the constructor of CBC mode AES algorithm
@@ -261,7 +243,7 @@ public class AES {
       });
 
       if (!DCProviderAvailable) {
-        defaultCipher = Cipher.getInstance("AES/CBC/NoPadding");
+        defaultCipher = Cipher.getInstance("AES/CBC/NoPadding", "SunJCE");
       }
     }
 
@@ -434,20 +416,10 @@ public class AES {
   }
 
   public static final class MBCBC extends BaseBlockCipher {
-    protected static boolean DCProviderAvailable = true;
+    // Use the algorithm provided by default provider if Openssl is unavailable.
+    private static boolean DCProviderAvailable =
+        AESMutliBufferEngine.opensslEngineAvailable;
     private Cipher defaultCipher = null;
-
-    // load the libraries needed by AES algorithm, when failed, use the
-    // algorithm provided by default provider
-    static {
-      try {
-        System.loadLibrary("crypto");
-        System.loadLibrary("diceros");
-      } catch (UnsatisfiedLinkError e) {
-        DCProviderAvailable = false;
-        throw new UnsatisfiedLinkError(e.getMessage());
-      }
-    }
 
     /**
      * the constructor of MBCBC mode AES algorithm
@@ -465,7 +437,7 @@ public class AES {
       });
 
       if (!DCProviderAvailable) {
-        defaultCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        defaultCipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
       }
     }
 
@@ -626,19 +598,10 @@ public class AES {
   }
 
   public static final class XTS extends BaseBlockCipher {
-    protected static boolean DCProviderAvailable = true;
-    protected Cipher defaultCipher = null;
-
-    // load the libraries needed by AES algorithm, when failed, use the
-    // algorithm provided by default provider
-    static {
-      try {
-        System.loadLibrary("crypto");
-        System.loadLibrary("diceros");
-      } catch (UnsatisfiedLinkError e) {
-        DCProviderAvailable = false;
-      }
-    }
+    // Use the algorithm provided by default provider if Openssl is unavailable.
+    private static boolean DCProviderAvailable =
+        AESOpensslEngine.opensslEngineAvailable;
+    private Cipher defaultCipher = null;
 
     /**
      * the constructor of XTS mode AES algorithm
@@ -656,7 +619,7 @@ public class AES {
       });
 
       if (!DCProviderAvailable) {
-        defaultCipher = Cipher.getInstance("AES/XTS/NoPadding");
+        defaultCipher = Cipher.getInstance("AES/XTS/NoPadding", "SunJCE");
       }
     }
 

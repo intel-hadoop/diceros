@@ -37,14 +37,23 @@ public class AESOpensslEngine implements BlockCipher {
   private byte[] IV;
   CipherParameters params = null;
   private long aesContext = 0; // context used by openssl
+  public static boolean opensslEngineAvailable;
+
+  static {
+    try {
+      System.loadLibrary("diceros");
+      synchronized(Object.class) {
+        initIDs();
+      }
+      opensslEngineAvailable = true;
+    } catch (Throwable e) {
+      e.printStackTrace();
+      opensslEngineAvailable = false;
+    }
+  }
 
   public AESOpensslEngine(int mode) {
     this.mode = mode;
-  }
-
-  public AESOpensslEngine(int mode, int padding) {
-    this.mode = mode;
-    this.padding = padding;
   }
 
   @Override
@@ -195,6 +204,8 @@ public class AESOpensslEngine implements BlockCipher {
     }
     return false;
   }
+
+  private native static void initIDs();
 
   private native int processByteBuffer(long context, ByteBuffer input, int inputPos,
       int inputLimit, ByteBuffer output, int outputPos, boolean isUpdate);

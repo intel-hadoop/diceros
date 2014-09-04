@@ -19,32 +19,30 @@
 #include <string.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
-#include "com_intel_diceros.h"
 #include "aes_utils.h"
 #include "com_intel_diceros_crypto_engines_AESOpensslEngine.h"
 
 CipherContext* preInitContext(JNIEnv *env, CipherContext* cipherCtx, jint mode,
     jbyteArray key, jbyteArray IV) {
+  int keyLength, ivLength;
   if (cipherCtx != NULL) {
     if (cipherCtx->opensslCtx != NULL && mode == MODE_CBC) {
-      EVP_CIPHER_CTX_cleanup(cipherCtx->opensslCtx);
-      free(cipherCtx->opensslCtx);
-      cipherCtx->opensslCtx = (EVP_CIPHER_CTX *) malloc(
-          sizeof(EVP_CIPHER_CTX));
-      EVP_CIPHER_CTX_init(cipherCtx->opensslCtx);
+      dlsym_EVP_CIPHER_CTX_cleanup(cipherCtx->opensslCtx);
+      dlsym_EVP_CIPHER_CTX_free(cipherCtx->opensslCtx);
+      cipherCtx->opensslCtx = dlsym_EVP_CIPHER_CTX_new();
+      dlsym_EVP_CIPHER_CTX_init(cipherCtx->opensslCtx);
     }
   } else {
     cipherCtx = (CipherContext*)malloc(sizeof(CipherContext));
-    cipherCtx->opensslCtx = (EVP_CIPHER_CTX *) malloc(
-        sizeof(EVP_CIPHER_CTX));
-    EVP_CIPHER_CTX_init(cipherCtx->opensslCtx);
+    cipherCtx->opensslCtx = dlsym_EVP_CIPHER_CTX_new();
+    dlsym_EVP_CIPHER_CTX_init(cipherCtx->opensslCtx);
     cipherCtx->key = NULL;
     cipherCtx->keyLength = 0;
     cipherCtx->iv = NULL;
     cipherCtx->ivLength = 0;
     cipherCtx->aesmbCtx = NULL;
   }
-  int keyLength = (*env)->GetArrayLength(env, key);
+  keyLength = (*env)->GetArrayLength(env, key);
   if (cipherCtx->key == NULL || cipherCtx->keyLength != keyLength) {
     cipherCtx->keyLength = keyLength;
     if (cipherCtx->key != NULL) {
@@ -52,7 +50,7 @@ CipherContext* preInitContext(JNIEnv *env, CipherContext* cipherCtx, jint mode,
     }
     cipherCtx->key = (jbyte*) malloc(cipherCtx->keyLength);
   }
-  int ivLength = (*env)->GetArrayLength(env, IV);
+  ivLength = (*env)->GetArrayLength(env, IV);
   if (cipherCtx->iv == NULL || cipherCtx->ivLength != ivLength) {
     cipherCtx->ivLength =  ivLength;
     if (cipherCtx->iv != NULL) {
@@ -61,6 +59,11 @@ CipherContext* preInitContext(JNIEnv *env, CipherContext* cipherCtx, jint mode,
     cipherCtx->iv = (jbyte*) malloc(cipherCtx->ivLength);
   }
   return cipherCtx;
+}
+
+JNIEXPORT void JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_initIDs(
+    JNIEnv *env, jclass clazz) {
+  initOpensslIDs(env);
 }
 
 JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_destoryCipherContext(
@@ -73,25 +76,25 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_de
 JNIEXPORT jlong JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_initWorkingKey(
     JNIEnv *env, jobject object, jbyteArray key, jboolean forEncryption,
     jint mode, jint padding, jbyteArray IV, jlong cipherContext) {
+  EVP_CIPHER* cipher = NULL;
   CipherContext* cipherCtx = (CipherContext*) cipherContext;
   cipherCtx = preInitContext(env, cipherCtx, mode, key, IV);
 
   (*env)->GetByteArrayRegion(env, key, 0, cipherCtx->keyLength, cipherCtx->key);
   (*env)->GetByteArrayRegion(env, IV, 0, cipherCtx->ivLength, cipherCtx->iv);
 
-  cryptInit cryptInitFunc = getCryptInitFunc(forEncryption);
-  EVP_CIPHER* cipher = getCipher(mode, cipherCtx->keyLength);
+  cipher = getCipher(mode, cipherCtx->keyLength);
   if (cipher != NULL) {
-    cryptInitFunc(cipherCtx->opensslCtx, cipher, NULL,
-        (unsigned char *) cipherCtx->key, (unsigned char *) cipherCtx->iv);
+    dlsym_EVP_CipherInit_ex(cipherCtx->opensslCtx, cipher, NULL,
+        (unsigned char *) cipherCtx->key, (unsigned char *) cipherCtx->iv, forEncryption);
   } else {
     THROW(env, "java/lang/IllegalArgumentException", "unsupportted mode or key size");
   }
 
   if (padding == PADDING_NOPADDING) {
-    EVP_CIPHER_CTX_set_padding(cipherCtx->opensslCtx, 0);
+    dlsym_EVP_CIPHER_CTX_set_padding(cipherCtx->opensslCtx, 0);
   } else if (padding == PADDING_PKCS5PADDING) {
-    EVP_CIPHER_CTX_set_padding(cipherCtx->opensslCtx, 1);
+    dlsym_EVP_CIPHER_CTX_set_padding(cipherCtx->opensslCtx, 1);
   }
 
   return (long) cipherCtx;
@@ -100,25 +103,23 @@ JNIEXPORT jlong JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_i
 JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_processBlock(
     JNIEnv *env, jobject object, jlong cipherContext, jbyteArray in, jint inOff,
     jint inLen, jbyteArray out, jint outOff) {
-  unsigned char * input = (unsigned char *) (*env)->GetByteArrayElements(env,
-      in, 0);
-  unsigned char * output = (unsigned char *) (*env)->GetByteArrayElements(env,
-      out, 0);
-
-  CipherContext* cipherCtx = (CipherContext*) cipherContext;
-  EVP_CIPHER_CTX * ctx = (EVP_CIPHER_CTX *) cipherCtx->opensslCtx;
-
+  unsigned char *input, *output;
+  CipherContext* cipherCtx;
+  EVP_CIPHER_CTX * ctx;
   int outLength = 0;
 
-  cryptUpdate cryptUpdateFunc = getCryptUpdateFunc(
-      ctx->encrypt == ENCRYPTION);
+  input = (unsigned char *) (*env)->GetByteArrayElements(env,
+      in, 0);
+  output = (unsigned char *) (*env)->GetByteArrayElements(env,
+      out, 0);
 
-  if (!cryptUpdateFunc(ctx, output + outOff, &outLength, input + inOff,
+  cipherCtx = (CipherContext*) cipherContext;
+  ctx = (EVP_CIPHER_CTX *) cipherCtx->opensslCtx;
+
+  if (!dlsym_EVP_CipherUpdate(ctx, output + outOff, &outLength, input + inOff,
       inLen)) {
-    fprintf(stderr, "inLen: %d, outLen: %d\n", inLen, outLength);
     THROW(env, "java/security/GeneralSecurityException",
         "Error in EVP_EncryptUpdate or EVP_DecryptUpdate");
-    ERR_print_errors_fp(stderr);
     return 0;
   }
 
@@ -130,19 +131,22 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_pr
 
 JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_doFinal(
     JNIEnv *env, jobject object, jlong cipherContext, jbyteArray out, jint outOff) {
-  unsigned char * output = (unsigned char *) (*env)->GetByteArrayElements(env,
+  unsigned char * output;
+  CipherContext* cipherCtx;
+  EVP_CIPHER_CTX * ctx;
+  int outLength = 0;
+
+  output = (unsigned char *) (*env)->GetByteArrayElements(env,
       out, 0);
 
-  CipherContext* cipherCtx = (CipherContext*) cipherContext;
-  EVP_CIPHER_CTX * ctx = (EVP_CIPHER_CTX *) cipherCtx->opensslCtx;
-  cryptFinal cryptFinalFunc = getCryptFinalFunc(ctx->encrypt == ENCRYPTION);
-  int outLength = 0;
-  if (!cryptFinalFunc(ctx, (unsigned char *) output + outOff, &outLength)) {
+  cipherCtx = (CipherContext*) cipherContext;
+  ctx = (EVP_CIPHER_CTX *) cipherCtx->opensslCtx;
+
+  if (!dlsym_EVP_CipherFinal_ex(ctx, (unsigned char *) output + outOff, &outLength)) {
     THROW(env, "javax/crypto/IllegalBlockSizeException",
         "Input length not multiple of 16 bytes");
     //THROW(env, "java/security/GeneralSecurityException",
     //          "Error in EVP_EncryptFinal_ex or EVP_DecryptFinal_ex");
-    ERR_print_errors_fp(stderr);
     return 0;
   }
 
@@ -154,41 +158,40 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_pr
     JNIEnv *env, jobject object, jlong cipherContext, jobject input,
     jint inputPos, jint inputLimit, jobject output, jint outputPos,
     jboolean isUpdate) {
-  jbyte* bInput = (*env)->GetDirectBufferAddress(env, input);
-  jbyte* bOutput = (*env)->GetDirectBufferAddress(env, output);
+  jbyte *bInput, *bOutput;
+  int outLenUpdate, outLengthFinal, inputLength;
+  EVP_CIPHER_CTX *ctx;
+  CipherContext* cipherCtx;
+
+  bInput = (*env)->GetDirectBufferAddress(env, input);
+  bOutput = (*env)->GetDirectBufferAddress(env, output);
 
   if (NULL == bInput || NULL == bOutput) {
     return 0;
   }
   //EVP_CIPHER_CTX_set_padding(context, 0);
-  CipherContext* cipherCtx = (CipherContext*) cipherContext;
-  EVP_CIPHER_CTX * ctx = (EVP_CIPHER_CTX *) cipherCtx->opensslCtx;
+  cipherCtx = (CipherContext*) cipherContext;
+  ctx = (EVP_CIPHER_CTX *) cipherCtx->opensslCtx;
 
-  cryptUpdate cryptUpdateFunc = getCryptUpdateFunc(
-      ctx->encrypt == ENCRYPTION);
-  cryptFinal cryptFinalFunc = getCryptFinalFunc(ctx->encrypt == ENCRYPTION);
+  outLenUpdate = 0;
+  outLengthFinal = 0;
+  inputLength = inputLimit - inputPos;
 
-  int outLenUpdate = 0;
-  int outLengthFinal = 0;
-  int inputLength = inputLimit - inputPos;
-
-  if (!cryptUpdateFunc(ctx, (unsigned char *) bOutput + outputPos,
+  if (!dlsym_EVP_CipherUpdate(ctx, (unsigned char *) bOutput + outputPos,
       &outLenUpdate, (const unsigned char *) bInput + inputPos,
       inputLength)) {
     THROW(env, "java/security/GeneralSecurityException",
         "Error in EVP_EncryptUpdate or EVP_DecryptUpdate");
-    ERR_print_errors_fp(stderr);
     return 0;
   }
   if (isUpdate == JNI_FALSE) {
-    if (!cryptFinalFunc(ctx,
+    if (!dlsym_EVP_CipherFinal_ex(ctx,
         (unsigned char *) bOutput + outputPos + outLenUpdate,
         &outLengthFinal)) {
       //THROW(env, "javax/crypto/IllegalBlockSizeException",
       //               "Input length not multiple of 16 bytes...");
       THROW(env, "java/security/GeneralSecurityException",
           "Error in EVP_EncryptFinal_ex or EVP_DecryptFinal_ex");
-      ERR_print_errors_fp(stderr);
       return 0;
     }
   }
@@ -197,42 +200,50 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_pr
 
 JNIEXPORT void JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_setTag(
     JNIEnv *env, jobject object, jlong cipherContext, jbyteArray tag, jint tagOff, jint tLen) {
-  unsigned char * input = (unsigned char *) (*env)->GetByteArrayElements(env,
-      tag, 0);
+  unsigned char * input;
+  CipherContext* cipherCtx;
+  EVP_CIPHER_CTX * ctx;
 
-  CipherContext* cipherCtx = (CipherContext*) cipherContext;
-  EVP_CIPHER_CTX * ctx = (EVP_CIPHER_CTX *) cipherCtx->opensslCtx;
+  input = (unsigned char *) (*env)->GetByteArrayElements(env, tag, 0);
 
-  EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, tLen, input + tagOff);
+  cipherCtx = (CipherContext*) cipherContext;
+  ctx = (EVP_CIPHER_CTX *) cipherCtx->opensslCtx;
+
+  dlsym_EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, tLen, input + tagOff);
 
   (*env)->ReleaseByteArrayElements(env, tag, (jbyte *) input, 0);
 }
 
 JNIEXPORT void JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_getTag(
     JNIEnv *env, jobject object, jlong cipherContext, jbyteArray out, jint outOff, jint tLen) {
-  unsigned char * tagOut = (unsigned char *) (*env)->GetByteArrayElements(env,
-        out, 0);
+  unsigned char * tagOut;
+  CipherContext* cipherCtx;
+  EVP_CIPHER_CTX * ctx;
 
-  CipherContext* cipherCtx = (CipherContext*) cipherContext;
-  EVP_CIPHER_CTX * ctx = (EVP_CIPHER_CTX *) cipherCtx->opensslCtx;
+  tagOut = (unsigned char *) (*env)->GetByteArrayElements(env, out, 0);
 
-  EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, tLen, tagOut + outOff);
+  cipherCtx = (CipherContext*) cipherContext;
+  ctx = (EVP_CIPHER_CTX *) cipherCtx->opensslCtx;
+
+  dlsym_EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, tLen, tagOut + outOff);
 
   (*env)->ReleaseByteArrayElements(env, out, (jbyte *) tagOut, 0);
 }
 
 JNIEXPORT void JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_updateAADFromByteArray(
     JNIEnv *env, jobject object, jlong cipherContext, jbyteArray src, jint offset, jint len) {
-  unsigned char * aad = (unsigned char *) (*env)->GetByteArrayElements(env,
+  unsigned char * aad;
+  CipherContext* cipherCtx;
+  EVP_CIPHER_CTX * ctx;
+  int outlen;
+
+  aad = (unsigned char *) (*env)->GetByteArrayElements(env,
       src, 0);
 
-  CipherContext* cipherCtx = (CipherContext*) cipherContext;
-  EVP_CIPHER_CTX * ctx = (EVP_CIPHER_CTX *) cipherCtx->opensslCtx;
+  cipherCtx = (CipherContext*) cipherContext;
+  ctx = (EVP_CIPHER_CTX *) cipherCtx->opensslCtx;
 
-  int outlen;
-  cryptUpdate cryptUpdateFunc = getCryptUpdateFunc(
-        ctx->encrypt == ENCRYPTION);
-  if (!cryptUpdateFunc(ctx, NULL, &outlen, aad + offset, len)) {
+  if (!dlsym_EVP_CipherUpdate(ctx, NULL, &outlen, aad + offset, len)) {
     THROW(env, "java/security/GeneralSecurityException",
             "Error in updateAAD");
   }
@@ -242,21 +253,23 @@ JNIEXPORT void JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_up
 
 JNIEXPORT void JNICALL Java_com_intel_diceros_crypto_engines_AESOpensslEngine_updateAADFromByteBuffer(
     JNIEnv *env, jobject object, jlong cipherContext, jobject src, jint inputPos, jint inputLimit) {
-  jbyte* aad = (*env)->GetDirectBufferAddress(env, src);
+  jbyte* aad;
+  CipherContext* cipherCtx;
+  EVP_CIPHER_CTX * ctx;
+  int inputLen, outlen;
+
+  aad = (*env)->GetDirectBufferAddress(env, src);
 
   if (NULL == aad) {
-    return 0;
+    return;
   }
 
-  CipherContext* cipherCtx = (CipherContext*) cipherContext;
-  EVP_CIPHER_CTX * ctx = (EVP_CIPHER_CTX *) cipherCtx->opensslCtx;
+  cipherCtx = (CipherContext*) cipherContext;
+  ctx = (EVP_CIPHER_CTX *) cipherCtx->opensslCtx;
 
-  int inputLen = inputLimit - inputPos;
-  int outlen;
+  inputLen = inputLimit - inputPos;
 
-  cryptUpdate cryptUpdateFunc = getCryptUpdateFunc(
-        ctx->encrypt == ENCRYPTION);
-  if (!cryptUpdateFunc(ctx, NULL, &outlen, (unsigned char *)aad + inputPos, inputLen)) {
+  if (!dlsym_EVP_CipherUpdate(ctx, NULL, &outlen, (unsigned char *)aad + inputPos, inputLen)) {
     THROW(env, "java/security/GeneralSecurityException",
             "Error in updateAAD");
   }

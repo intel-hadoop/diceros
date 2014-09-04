@@ -20,19 +20,29 @@ https://github.com/intel-hadoop/diceros/wiki/Quick-Start
 
 #### Software prerequisite:
 * <p>openssl-1.0.1c or above
-* <p>yasm-1.2.0 or above</p>
-* <p>openjdk6 or above, oracle jdk6 or above</p>
+* <p>jdk6 or above</p>
 * <p>add `libdiceros.so` and `libaesmb.so` (which are generated after build) to the environment variable `java.library.path`</p>
 * <p>add `diceros-[VERSION].jar`(which is generated after build) to the classpath</p>
 
-### Build
-`mvn package -Dyasm.prefix={yasm path}`
+### Build Requirements:
+* <p>openssl</p>
+* <p>yasm-1.2.0 or above</p>
+* <p>Microsoft Visual Studio Professional 10 if building on windows</p>
+* <p>cmake 2.6 or above</p>
+* <p>jdk6 or above</p>
+* <p>maven</p>
+
+### Build on Linux
+`mvn package -Pnative -Dyasm.prefix={yasm path}`
+
+### Build on Windows
+`mvn package -Pnative-win -Dyasm.prefix={yasm path}`
 
 ### Build RPM
-`mvn clean package -DskipTests -Psign,rpm -Drpm.install.prefix.default={default install path, should point to your jre home, for example: /usr/java/default/jre}`
+`mvn clean package -DskipTests -Pnative,sign,rpm -Drpm.install.prefix.default={default install path, should point to your jre home, for example: /usr/java/default/jre}`
 
 ### Sign the diceros jar file with keystore
-`mvn clean package -DskipTests -Psign -Dkeystore.path={keystore path} -Dkeystore.alias={keystore.alias} -Dkeystore.password={keystore.password} -Dyasm.prefix={yasm path}`
+`mvn clean package -DskipTests -Pnative/native-win,sign -Dkeystore.path={keystore path} -Dkeystore.alias={keystore.alias} -Dkeystore.password={keystore.password} -Dyasm.prefix={yasm path}`
 
 ### Download Binary Releases
 https://github.com/intel-hadoop/diceros/releases

@@ -19,13 +19,13 @@
 #ifndef __AES_MULTIBUFFER_H
 #define __AES_MULTIBUFFER_H
 
-#include <jni.h>
 #include "aes_utils.h"
 
 #define HEADER_LENGTH 2
 
+void initAesmbIDs();
 long init(JNIEnv* env, int forEncryption, signed char* nativeKey, int keyLength, signed char* nativeIv,
-    int ivLength, int padding , long oldContext, int* loadLibraryResult);
+    int ivLength, int padding , long oldContext);
 void reset(CipherContext* cipherContext, uint8_t* nativeKey, uint8_t* nativeIv);
 int bufferCrypt(CipherContext* cipherContext, const char* input, int inputLength, char* output);
 

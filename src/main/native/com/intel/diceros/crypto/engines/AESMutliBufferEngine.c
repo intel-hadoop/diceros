@@ -26,29 +26,22 @@
 #include "com_intel_diceros_crypto_engines_AESMutliBufferEngine.h"
 #include "aes_multibuffer.h"
 
-//-------- begin dlerror handling functions -----
-void throwDLError(JNIEnv* env, const char* lib)
-{
-  char msg[1000];
-  snprintf(msg, 1000, "Cannot load %s (%s)!", lib, dlerror());
-  THROW(env, "java/lang/UnsatisfiedLinkError", msg);
+JNIEXPORT void JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngine_initIDs(
+    JNIEnv *env, jclass clazz) {
+  initOpensslIDs(env);
+  initAesmbIDs(env);
 }
-//-------- end dlerror handling functions -----
 
-/*
- * mode: 0, ENCRYPTION, 1: DECRYPTION
- * return: context Id
- * Method:    init
- */
 JNIEXPORT jlong JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngine_init(JNIEnv * env,
     jobject object, jboolean forEncryption, jbyteArray key, jbyteArray iv, jint padding, jlong oldContext) {
-  // init overall struction, for memory allocation
-  int keyLength = (*env)->GetArrayLength(env, key);
-  int ivLength = (*env)->GetArrayLength(env, iv);
-
-  // localize key and iv
+  int keyLength, ivLength;
+  long ctx;
   jbyte nativeKey[32];
   jbyte nativeIv[32];
+  // init overall struction, for memory allocation
+  keyLength = (*env)->GetArrayLength(env, key);
+  ivLength = (*env)->GetArrayLength(env, iv);
+
   (*env)->GetByteArrayRegion(env, key, 0, keyLength, nativeKey);
   (*env)->GetByteArrayRegion(env, iv, 0, ivLength, nativeIv);
 
@@ -56,15 +49,8 @@ JNIEXPORT jlong JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngi
     THROW(env, "java/lang/IllegalArgumentException", "Illegal key size");
   }
 
-  int loadLibraryResult = 0;
-  long ctx = init(env, forEncryption, nativeKey, keyLength, nativeIv, ivLength, padding ,
-      oldContext, &loadLibraryResult);
-  if (loadLibraryResult == -1) {
-     throwDLError(env, HADOOP_CRYPTO_LIBRARY);
-     return 0;
-  } else if (loadLibraryResult == -2) {
-     traceDLError(HADOOP_AESMB_LIBRARY);
-  }
+  ctx = init(env, forEncryption, nativeKey, keyLength, nativeIv, ivLength, padding ,
+      oldContext);
 
   return ctx;
 }
@@ -83,24 +69,33 @@ JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngin
 JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngine_processByteBuffer(JNIEnv * env,
     jobject object, jlong context, jobject inputDirectBuffer, jint start, jint inputLength,
     jobject outputDirectBuffer, jint begin, jboolean isUpdate) {
-  unsigned char * input = (unsigned char *)(*env)->GetDirectBufferAddress(env, inputDirectBuffer) + start;
-  unsigned char * output = (unsigned char *)(*env)->GetDirectBufferAddress(env, outputDirectBuffer) + begin;
+  unsigned char *input;
+  unsigned char *output;
+  int encrypt_length;
+  CipherContext* cipherContext;
 
-  CipherContext* cipherContext = (CipherContext*) context;
-  int encrypt_length = bufferCrypt(cipherContext, input, inputLength, output);
+  input = (unsigned char *)(*env)->GetDirectBufferAddress(env, inputDirectBuffer) + start;
+  output = (unsigned char *)(*env)->GetDirectBufferAddress(env, outputDirectBuffer) + begin;
+
+  cipherContext = (CipherContext*) context;
+  encrypt_length = bufferCrypt(cipherContext, input, inputLength, output);
   reset(cipherContext, NULL, NULL);
   return encrypt_length;
 }
 
 JNIEXPORT jint JNICALL Java_com_intel_diceros_crypto_engines_AESMutliBufferEngine_processBlock(JNIEnv *env,
     jobject object, jlong context, jbyteArray in, jint inOff, jint inputLength, jbyteArray out, jint outOff) {
-  unsigned char * inputTmp = (unsigned char *) (*env)->GetByteArrayElements(env, in, 0);
-  unsigned char * outputTmp = (unsigned char *) (*env)->GetByteArrayElements(env, out, 0);
-  unsigned char * input = inputTmp;
-  unsigned char * output = outputTmp;
+  unsigned char *inputTmp, *outputTmp, *input, *output;
+  int encrypt_length;
+  CipherContext* cipherContext;
 
-  CipherContext* cipherContext = (CipherContext*) context;
-  int encrypt_length = bufferCrypt(cipherContext, input, inputLength, output);
+  inputTmp = (unsigned char *) (*env)->GetByteArrayElements(env, in, 0);
+  outputTmp = (unsigned char *) (*env)->GetByteArrayElements(env, out, 0);
+  input = inputTmp;
+  output = outputTmp;
+
+  cipherContext = (CipherContext*) context;
+  encrypt_length = bufferCrypt(cipherContext, input, inputLength, output);
 
   (*env)->ReleaseByteArrayElements(env, in, (jbyte *) inputTmp, 0);
   (*env)->ReleaseByteArrayElements(env, out, (jbyte *) outputTmp, 0);

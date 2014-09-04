@@ -23,7 +23,7 @@
 
 JNIEXPORT jboolean JNICALL Java_com_intel_diceros_provider_securerandom_SecureRandom_00024DRNG_drngInit 
   (JNIEnv *env, jclass thisObj) {
-  if (0 == drngInit())
+  if (0 == drngInit(env))
     return JNI_TRUE;
   else
     return JNI_FALSE;
@@ -31,11 +31,15 @@ JNIEXPORT jboolean JNICALL Java_com_intel_diceros_provider_securerandom_SecureRa
 
 JNIEXPORT jboolean JNICALL Java_com_intel_diceros_provider_securerandom_SecureRandom_00024DRNG_drngRandBytes___3B 
   (JNIEnv *env, jobject thisObj, jbyteArray buffer) {
+  int rtn;
+  jbyte* b;
+  jsize buffer_len;
+
   if (NULL == buffer)
     return JNI_FALSE;
-  jbyte* b = (*env)->GetByteArrayElements(env, buffer, 0);
-  jsize buffer_len = (*env)->GetArrayLength(env, buffer);
-  int rtn = drngRandBytes((uint8_t *)b, buffer_len);
+  b = (*env)->GetByteArrayElements(env, buffer, 0);
+  buffer_len = (*env)->GetArrayLength(env, buffer);
+  rtn = drngRandBytes((uint8_t *)b, buffer_len);
   (*env)->ReleaseByteArrayElements(env, buffer, b, 0);
 
   if (0 == rtn)
@@ -46,18 +50,22 @@ JNIEXPORT jboolean JNICALL Java_com_intel_diceros_provider_securerandom_SecureRa
 
 JNIEXPORT jint JNICALL Java_com_intel_diceros_provider_securerandom_SecureRandom_00024DRNG_drngRandBytes__Ljava_nio_ByteBuffer_2 
   (JNIEnv *env, jobject thisObj, jobject buffer) {
+  jbyte* b;
+  jlong buffer_len;
+  int rtn;
+
   if (NULL == buffer)
     return JNI_FALSE;
-  jbyte* b = (*env)->GetDirectBufferAddress(env, buffer);
-  jlong buffer_len = (*env)->GetDirectBufferCapacity(env, buffer);
+  b = (*env)->GetDirectBufferAddress(env, buffer);
+  buffer_len = (*env)->GetDirectBufferCapacity(env, buffer);
 
   if (NULL == b || -1 == buffer_len) {
     return -2;
-  } else {
-    int rtn = drngRandBytes((uint8_t *)b, buffer_len);
-    if (0 == rtn)
-      return 0;
-    else
-      return -1;
   }
+
+  rtn = drngRandBytes((uint8_t *)b, buffer_len);
+  if (0 == rtn)
+    return 0;
+  else
+    return -1;
 }

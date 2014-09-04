@@ -37,15 +37,12 @@ public class SecureRandom {
 
     static {
       try {
-        System.loadLibrary("crypto");
         System.loadLibrary("diceros");
-        synchronized (Object.class) {
-          boolean ret = drngInit();
-          if (ret) {
-            drngAvailable = true;
-          } else {
-            drngAvailable = false;
-          }
+        boolean ret = drngInit();
+        if (ret) {
+          drngAvailable = true;
+        } else {
+          drngAvailable = false;
         }
       } catch (UnsatisfiedLinkError e) {
         drngAvailable = false;

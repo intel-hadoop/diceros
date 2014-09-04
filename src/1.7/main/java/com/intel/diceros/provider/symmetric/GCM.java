@@ -47,19 +47,11 @@ import com.intel.diceros.provider.symmetric.util.BlockCipherProvider;
 import com.intel.diceros.provider.symmetric.util.Constants;
 
 public class GCM extends BaseBlockCipher {
-  private static boolean DCProviderAvailable = true;
+  // Use the algorithm provided by default provider if Openssl is unavailable.
+  private static boolean DCProviderAvailable =
+      AESOpensslEngine.opensslEngineAvailable;
   private Cipher defaultCipher = null;
 
-  // load the libraries needed by AES algorithm, when failed, use the
-  // algorithm provided by default provider
-  static {
-    try {
-      System.loadLibrary("crypto");
-      System.loadLibrary("diceros");
-    } catch (UnsatisfiedLinkError e) {
-      DCProviderAvailable = false;
-    }
-  }
   
   /**
    * the constructor of GCM mode AES algorithm
@@ -77,7 +69,7 @@ public class GCM extends BaseBlockCipher {
     });
 
     if (!DCProviderAvailable) {
-      defaultCipher = Cipher.getInstance("AES/GCM/NoPadding");
+      defaultCipher = Cipher.getInstance("AES/GCM/NoPadding", "SunJCE");
     }
   }
 
