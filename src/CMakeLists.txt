@@ -72,6 +72,7 @@ macro(set_find_shared_library_version LVERS)
         SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so")
     ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         # Windows doesn't support finding shared libraries by version.
+        SET(CMAKE_FIND_LIBRARY_SUFFIXES ".dll")
     ELSE()
         # Most UNIX variants use .so
         SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so.${LVERS}")
@@ -138,7 +139,11 @@ endif (CRYPTO_LIBRARY AND CRYPTO_INCLUDE_DIR)
 
 # AES MB Cipher
 SET(STORED_CMAKE_FIND_LIBRARY_SUFFIXES CMAKE_FIND_LIBRARY_SUFFIXES)
-SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so")
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    SET(CMAKE_FIND_LIBRARY_SUFFIXES ".dll")
+ELSE()
+    SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so")
+ENDIF()
 find_library(AESMB_LIBRARY
     NAMES aesmb
     PATHS ${D}/aesmb

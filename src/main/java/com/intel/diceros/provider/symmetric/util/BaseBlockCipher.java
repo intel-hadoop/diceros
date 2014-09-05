@@ -129,7 +129,7 @@ public abstract class BaseBlockCipher extends CipherSpi {
 
   protected AlgorithmParameterSpec getAlgorithmParametersSpec()
       throws NoSuchAlgorithmException, NoSuchProviderException {
-    byte[] iv = ivParam.getIV();
+    byte[] iv = engineGetIV();
     if (iv == null) {
       if (cipher.getUnderlyingCipher().getMode() == Constants.MODE_GCM) {
         iv = new byte[Constants.GCM_DEFAULT_IV_LEN];

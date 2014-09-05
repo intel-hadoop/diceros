@@ -514,7 +514,7 @@ int opensslResetContext(int forEncryption, EVP_CIPHER_CTX* context, CipherContex
 int opensslResetContextMB(int forEncryption, EVP_CIPHER_CTX* context,
     CipherContext* cipherContext, int count) {
   int keyLength;
-  unsigned char* nativeKey, nativeIv;
+  unsigned char* nativeKey, *nativeIv;
   EVP_CIPHER* cipher = NULL;
 
   keyLength = cipherContext->keyLength;

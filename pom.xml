@@ -217,13 +217,11 @@
                                                 <exclude name='**/*svn' />
                                             </fileset>
                                         </copy>
-                                        <!--
-                                        <exec executable="make" dir="${project.build.directory}/native/aesmb/"
+                                        <exec executable="msbuild" dir="${project.build.directory}/native/aesmb/aesmb"
                                               failonerror="true">
-                                            <arg line="YASM_BIN=${yasm.prefix}/yasm"/>
+                                            <arg line="aesmb.sln /nologo /p:Configuration=Release"/>
                                         </exec>
-                                        <copy file="${project.build.directory}/native/aesmb/libaesmb.so" tofile="${project.build.directory}/native/target/usr/local/lib/libaesmb.so"/>
-                                        -->
+                                        <copy file="${project.build.directory}/native/aesmb/aesmb/x64/Release/aesmb.dll" tofile="${project.build.directory}/native/target/usr/local/lib/aesmb.dll"/>
                                         <exec executable="cmake" dir="${project.build.directory}/native"
                                               failonerror="true">
                                             <arg line="${basedir}/src/ -G 'Visual Studio 10 Win64' -DGENERATED_JAVAH=${project.build.directory}/native/javah -DJVM_ARCH_DATA_MODEL=${sun.arch.data.model} -DREQUIRE_CRYPTO=${require.crypto} -DCUSTOM_CRYPTO_PREFIX=${crypto.prefix} -DCUSTOM_CRYPTO_LIB=${crypto.lib} -DCUSTOM_CRYPTO_INCLUDE=${crypto.include} -DREQUIRE_AESMB=${require.aesmb} -DCUSTOM_AESMB_INCLUDE=${project.build.directory}/native/aesmb"/>
