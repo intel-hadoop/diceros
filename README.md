@@ -36,7 +36,7 @@ https://github.com/intel-hadoop/diceros/wiki/Quick-Start
 `mvn package -Pnative -Dyasm.prefix={yasm path}`
 
 ### Build on Windows
-`mvn package -Pnative-win -Dyasm.prefix={yasm path}`
+`mvn package -Pnative-win`
 
 ### Build RPM
 `mvn clean package -DskipTests -Pnative,sign,rpm -Drpm.install.prefix.default={default install path, should point to your jre home, for example: /usr/java/default/jre}`
