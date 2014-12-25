@@ -36,6 +36,7 @@ https://github.com/intel-hadoop/diceros/wiki/Quick-Start
 `mvn package -Pnative -Dyasm.prefix={yasm path}`
 
 ### Build on Windows
+set Platform=x64
 `mvn package -Pnative-win`
 
 ### Build RPM
