@@ -79,6 +79,18 @@ macro(set_find_shared_library_version LVERS)
     ENDIF()
 endmacro(set_find_shared_library_version LVERS)
 
+macro(set_find_shared_library_without_version)
+    IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        # Mac OS uses .dylib
+        SET(CMAKE_FIND_LIBRARY_SUFFIXES ".dylib")
+    ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+        # No effect
+    ELSE()
+        # Most UNIX variants use .so
+        SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so")
+    ENDIF()
+endmacro(set_find_shared_library_without_version)
+
 if (NOT GENERATED_JAVAH)
     # Must identify where the generated headers have been placed
     MESSAGE(FATAL_ERROR "You must set the cmake variable GENERATED_JAVAH")
@@ -99,7 +111,7 @@ CHECK_LIBRARY_EXISTS(dl dlopen "" NEED_LINK_DL)
 
 # AES Cipher
 SET(STORED_CMAKE_FIND_LIBRARY_SUFFIXES CMAKE_FIND_LIBRARY_SUFFIXES)
-set_find_shared_library_version("1.0.0")
+set_find_shared_library_without_version()
 SET(OPENSSL_NAME "crypto")
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     SET(OPENSSL_NAME "libeay32")
@@ -215,7 +227,7 @@ target_link_dual_libraries(diceros
     ${LIB_DL}
     ${JAVA_JVM_LIBRARY}
 )
-SET(LIBDICEROS_VERSION "1.2.2")
+SET(LIBDICEROS_VERSION "1.3.0")
 SET_TARGET_PROPERTIES(diceros PROPERTIES
     SOVERSION ${LIBDICEROS_VERSION})
 dual_output_directory(diceros target/usr/local/lib)
