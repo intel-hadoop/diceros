@@ -1,6 +1,8 @@
 Diceros
 ===============
 
+[![Join the chat at https://gitter.im/intel-hadoop/diceros](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/intel-hadoop/diceros?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Diceros is a sub-project of Rhino project which focus on providing a hardware accelerated JCE provider. Initial effort include:
 * AES-NI enabled AES/CTR/NoPadding, AES/CBC/NoPadding, AES/CBC/PKCS5Padding, AES/MBCBC/NoPadding, AES/MBCBC/PKCS5Padding,
  AES/XTS/NoPadding, AES/GCM/NoPadding encryption/decryption support
